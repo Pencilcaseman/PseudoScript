@@ -23,5 +23,8 @@
     <ClInclude Include="pseudoscript\interpreter\types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pseudoscript\pseudoscript.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

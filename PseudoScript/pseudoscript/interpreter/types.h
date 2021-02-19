@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <iostream>
 #include <string>
@@ -48,7 +48,7 @@ namespace pseudo
 
 		inline void construct()
 		{
-			cppMembers["to_string"] = [=](const std::shared_ptr<Object> &args)
+			cppMembers["__str__"] = [=](const std::shared_ptr<Object> &args)
 			{
 				return std::make_shared<String>(value);
 			};
@@ -97,13 +97,13 @@ namespace pseudo
 
 		inline void construct()
 		{
-			cppMembers["to_string"] = [=](const std::shared_ptr<Object> &args)
+			cppMembers["__str__"] = [=](const std::shared_ptr<Object> &args)
 			{
 				return std::make_shared<String>(std::to_string(value));
 			};
 		}
 
-		inline std::string type() const
+		inline std::string type() const override
 		{
 			return "int";
 		}
@@ -129,11 +129,13 @@ namespace pseudo
 		}
 	};
 
+
+
 	class Interpreter
 	{
 	public:
 		std::vector<std::string> program;
-		std::map<std::string, Object *> heap;
+		std::map<std::string, std::shared_ptr<Object>> heap;
 
 		Interpreter(const std::vector<std::string> &code) : program(code)
 		{}
