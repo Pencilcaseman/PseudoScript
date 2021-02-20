@@ -48,7 +48,7 @@ namespace pseudo
 	class Function;
 	class None;
 	class String;
-	// class Bool;
+	class Bool;
 	class Int;
 	// class Float;
 	class List;
@@ -164,6 +164,24 @@ namespace pseudo
 
 		Int();
 		Int(int64_t val);
+
+		inline void construct();
+
+		inline std::string type() const override;
+
+		bool castToCBool() const override;
+		int64_t castToCInt() const override;
+		double castToCFloat() const override;
+		std::string castToCString() const override;
+	};
+
+	class Bool : public Object
+	{
+	public:
+		bool value;
+
+		Bool();
+		Bool(bool val);
 
 		inline void construct();
 
@@ -305,6 +323,65 @@ namespace pseudo
 	}
 
 #pragma endregion NoneType
+
+#pragma region BoolType
+
+	Bool::Bool()
+	{
+		construct();
+	}
+
+	Bool::Bool(bool val)
+	{
+		construct();
+		value = val;
+	}
+
+	inline void Bool::construct()
+	{
+		members["castToString"] = std::make_shared<Function>(
+			"castToString", [&](std::shared_ptr<Object> args)
+		{
+			return std::make_shared<String>(value ? "true" : "false");
+		}
+		);
+
+		members["represent"] = std::make_shared<Function>(
+			"represent", [&](std::shared_ptr<Object> args)
+		{
+			return std::make_shared<String>(value ? "true" : "false");
+		}
+		);
+
+		memberLocations["castToString"] = MemberLocation::CPP;
+		memberLocations["represent"] = MemberLocation::CPP;
+	}
+
+	inline std::string Bool::type() const
+	{
+		return "bool";
+	}
+
+	bool Bool::castToCBool() const
+	{
+		return value;
+	}
+
+	int64_t Bool::castToCInt() const
+	{
+		return (int64_t) value;
+	}
+
+	double Bool::castToCFloat() const
+	{
+		return (double) value;
+	}
+	std::string Bool::castToCString() const
+	{
+		return value ? "true" : "false";
+	}
+
+#pragma endregion BoolType
 
 #pragma region IntType
 
