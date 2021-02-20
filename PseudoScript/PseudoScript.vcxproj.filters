@@ -20,10 +20,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pseudoscript\interpreter\types.h">
+    <ClInclude Include="pseudoscript\pseudoscript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pseudoscript\pseudoscript.h">
+    <ClInclude Include="pseudoscript\utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pseudoscript\interpreter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

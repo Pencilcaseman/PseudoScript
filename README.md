@@ -4,7 +4,7 @@ PseudoScript is an interpreted language, aimed at being simple to understand and
 
 ---
 
-Below is the desired way of writing PseudoScript code, and development will be oriented around this example.
+Below is the desired way of writing PseudoScript code, and development will be oriented around this example:
 
 ```txt
 myInt = 5;
@@ -18,13 +18,18 @@ myFunction(arg1, arg2) {
 }
 
 MyClass {
-    __init__(this, name, age) {
+    __init__(name, age) {
         this.name = name;
         this.age = age;
     }
 
-    getUsername(this) {
+    getUsername() {
         return this.name.lower() + string(this.age)
     }
 }
+
+myObject = MyClass("Joe Bloggs", 50);
+print(myObject.getUsername())
 ```
+
+Note: Language design is subject to change

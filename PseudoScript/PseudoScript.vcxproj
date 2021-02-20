@@ -108,6 +108,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -136,14 +137,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="PseudoScript.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pseudoscript\interpreter\types.h" />
+    <ClInclude Include="pseudoscript\interpreter.h" />
     <ClInclude Include="pseudoscript\pseudoscript.h" />
+    <ClInclude Include="pseudoscript\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
