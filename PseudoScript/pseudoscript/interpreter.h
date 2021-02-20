@@ -50,7 +50,7 @@ namespace pseudo
 	class String;
 	class Bool;
 	class Int;
-	// class Float;
+	class Float;
 	class List;
 
 #pragma endregion ClassTypes
@@ -65,7 +65,10 @@ namespace pseudo
 
 		Interpreter(const std::vector<std::string> &code);
 
+		inline void preprocess();
+
 		inline std::shared_ptr<Object> interpretLine(const std::string &line);
+		inline void interpret();
 	};
 
 #pragma endregion InterpreterForwardDeclare
@@ -157,6 +160,24 @@ namespace pseudo
 		std::string castToCString() const override;
 	};
 
+class Bool : public Object
+	{
+	public:
+		bool value;
+
+		Bool();
+		Bool(bool val);
+
+		inline void construct();
+
+		inline std::string type() const override;
+
+		bool castToCBool() const override;
+		int64_t castToCInt() const override;
+		double castToCFloat() const override;
+		std::string castToCString() const override;
+	};
+
 	class Int : public Object
 	{
 	public:
@@ -175,13 +196,13 @@ namespace pseudo
 		std::string castToCString() const override;
 	};
 
-	class Bool : public Object
+	class Float : public Object
 	{
 	public:
-		bool value;
+		double value;
 
-		Bool();
-		Bool(bool val);
+		Float();
+		Float(double val);
 
 		inline void construct();
 
@@ -215,6 +236,7 @@ namespace pseudo
 
 #pragma endregion TypeForwardDeclares
 
+#pragma region Types
 #pragma region FunctionType
 
 	Function::Function()
@@ -443,6 +465,66 @@ namespace pseudo
 
 #pragma endregion IntType
 
+#pragma region FloatType
+
+	Float::Float()
+	{
+		construct();
+	}
+
+	Float::Float(double val)
+	{
+		value = val;
+		construct();
+	}
+
+	inline void Float::construct()
+	{
+		members["castToString"] = std::make_shared<Function>(
+			"castToString", [&](std::shared_ptr<Object> args)
+		{
+			return std::make_shared<String>(std::to_string(value));
+		}
+		);
+
+		members["represent"] = std::make_shared<Function>(
+			"represent", [&](std::shared_ptr<Object> args)
+		{
+			return std::make_shared<String>(std::to_string(value));
+		}
+		);
+
+		memberLocations["castToString"] = MemberLocation::CPP;
+		memberLocations["represent"] = MemberLocation::CPP;
+	}
+
+	inline std::string Float::type() const
+	{
+		return "float";
+	}
+
+	bool Float::castToCBool() const
+	{
+		return (bool) value;
+	}
+
+	int64_t Float::castToCInt() const
+	{
+		return (uint64_t) value;
+	}
+
+	double Float::castToCFloat() const
+	{
+		return value;
+	}
+
+	std::string Float::castToCString() const
+	{
+		return std::to_string(value);
+	}
+
+#pragma endregion FloatType
+
 #pragma region StringType
 
 	String::String()
@@ -651,15 +733,28 @@ namespace pseudo
 	}
 
 #pragma endregion ListType
+#pragma endregion Types
 
 #pragma region Interpreter
 
 	Interpreter::Interpreter(const std::vector<std::string> &code)
-	{}
+	{
+		program = code;
+	}
+
+	inline void Interpreter::preprocess()
+	{
+
+	}
 
 	inline std::shared_ptr<Object> Interpreter::interpretLine(const std::string &line)
 	{
 		return std::make_shared<Int>(12345);
+	}
+
+	inline void Interpreter::interpret()
+	{
+		
 	}
 
 #pragma endregion Interpreter
