@@ -14,9 +14,19 @@ namespace pseudo
 	// Error types
 	enum class ErrorType
 	{
-		SUCCESS,
-		MEMBER_DOES_NOT_EXIST,
-		INDEX_OUT_OF_RANGE
+		SUCCESS = 0,
+		MEMBER_DOES_NOT_EXIST = 1,
+		INDEX_OUT_OF_RANGE = 2,
+		TYPE_ERROR = 3,
+		ARGUMENT_COUNT_ERROR = 4
+	};
+
+	std::map<uint64_t, std::string> errorDescriptions = {
+		std::make_pair((uint64_t) ErrorType::SUCCESS, "SUCCESS: Everything succeeded"),
+		std::make_pair((uint64_t) ErrorType::MEMBER_DOES_NOT_EXIST, "MEMBER_DOES_NOT_EXIST: The requested value does not exist inside the object"),
+		std::make_pair((uint64_t) ErrorType::INDEX_OUT_OF_RANGE, "INDEX_OUT_OF_RANGE: The requested index is not within the valid range of the object"),
+		std::make_pair((uint64_t) ErrorType::TYPE_ERROR, "TYPE_ERROR: The provided data-type is not valid for this purpose"),
+		std::make_pair((uint64_t) ErrorType::ARGUMENT_COUNT_ERROR, "ARGUMENT_COUNT_ERROR: An invalid number of arguments was passed to a function")
 	};
 
 	// Member locations
@@ -28,7 +38,7 @@ namespace pseudo
 		PSEUDO
 	};
 
-	ErrorType pseudoInterpreterError = ErrorType::SUCCESS;
+	ErrorType interpreterError = ErrorType::SUCCESS;
 #pragma endregion InfoEnums
 
 #pragma region ClassTypes
@@ -183,7 +193,7 @@ namespace pseudo
 		inline std::string castToCString() const override;
 	};
 
-	std::shared_ptr<None> NONE = std::make_shared<None>();
+	std::shared_ptr<Object> NONE = std::make_shared<None>();
 
 #pragma endregion TypeForwardDeclares
 
@@ -368,7 +378,7 @@ namespace pseudo
 		construct();
 		value = str;
 	}
-	
+
 	inline void String::construct()
 	{
 		members["castToString"] = std::make_shared<Function>(
@@ -461,25 +471,71 @@ namespace pseudo
 		}
 		);
 
-		members["castToString"] = std::make_shared<Function>(
-			"castToString",
+		members["represent"] = members["castToString"];
+
+		members["getItem"] = std::make_shared<Function>(
+			"getItem",
 			[&](std::shared_ptr<Object> args)
 		{
-			std::string res = "[";
-			for (uint64_t i = 0; i < values.size(); i++)
+			if (args->type() == "int")
 			{
-				auto &val = values[i];
-				res += (*val->members["represent"])(nullptr)->castToCString();
+				auto index = args->castToCInt();
+				if (index >= values.size() || index < 0)
+				{
+					interpreterError = ErrorType::INDEX_OUT_OF_RANGE;
+					return NONE;
+				}
 
-				if (i + 1 < values.size())
-					res += ", ";
+				return values[index];
+			}
+			interpreterError = ErrorType::TYPE_ERROR;
+			return NONE;
+		}
+		);
+
+		members["setItem"] = std::make_shared<Function>(
+			"setItem",
+			[&](std::shared_ptr<Object> args)
+		{
+			if (args->type() == "list")
+			{
+				if ((*args->members["length"])(nullptr)->castToCInt() == 2)
+				{
+					auto index = (*args->members["getItem"])(std::make_shared<pseudo::Int>(0))->castToCInt();
+					auto value = (*args->members["getItem"])(std::make_shared<pseudo::Int>(1));
+
+					if (index >= values.size() || index < 0)
+					{
+						interpreterError = ErrorType::INDEX_OUT_OF_RANGE;
+						return NONE;
+					}
+
+					values[index] = value;
+					return NONE;
+				}
+
+				interpreterError = ErrorType::ARGUMENT_COUNT_ERROR;
+				return NONE;
 			}
 
-			return std::make_shared<String>(res + "]");
+			interpreterError = ErrorType::TYPE_ERROR;
+			return NONE;
+		}
+		);
+
+		members["length"] = std::make_shared<Function>(
+			"length",
+			[&](std::shared_ptr<Object> args)
+		{
+			return std::make_shared<Int>(values.size());
 		}
 		);
 
 		memberLocations["castToString"] = MemberLocation::CPP;
+		memberLocations["getItem"] = MemberLocation::CPP;
+		memberLocations["setItem"] = MemberLocation::CPP;
+		memberLocations["represent"] = MemberLocation::CPP;
+		memberLocations["length"] = MemberLocation::CPP;
 	}
 
 	inline std::string List::type() const
