@@ -3,7 +3,12 @@
 #include <cstring>
 #include <cstdint>
 
+#pragma warning(disable : 4996)
+
 #define OBJECT Object *
+#define INT(x) int64_t(x)
+#define FLOAT(x) double(x)
+#define STRING(x) ((const char *) (x))
 
 typedef struct Object Object;
 
@@ -20,30 +25,58 @@ typedef struct Object
 #define INC_REF(obj) (*obj->references)++
 #define DEC_REF(obj) (*obj->references)--
 
-#define PTR_CAST(ret, val) (ret *) (val)
-#define PTR_EVAL(type, val) *(type *) (val)
+#define PTR_CAST(ret, val) (ret) (val)
+#define PTR_EVAL(type, val) ((type) (val))
+
+inline OBJECT COPY(OBJECT val);
 
 template<typename t>
-inline Object *CREATE_OBJECT(const char *type, std::initializer_list<OBJECT> data, bool shouldFree, t value)
+inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT> &data, t value)
 {
+	auto newValue = new t(value);
 	if (data.size() != 0)
 	{
+		// auto start = omp_get_wtime() * 1000000000;
 		uint64_t index = 0;
 		OBJECT *members = new OBJECT[data.size()];
+
+		// auto end = omp_get_wtime() * 1000000000;
+
 		for (auto &val : data)
 		{
 			INC_REF(val);
-			members[index++] = val;
+			members[index] = val; // COPY(val);
+			index++;
 		}
-		return new Object{type, index, members, shouldFree, PTR_CAST(void, (uint64_t *) (value)), new uint64_t(1)};
+
+		// std::cout << "Time: " << end - start << "\n";
+
+		return new Object{type, index, members, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 	}
-	return new Object{type, 0, nullptr, shouldFree, PTR_CAST(void, (uint64_t *) (value)), new uint64_t(1)};
+	return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 };
 
 template<typename t>
-inline Object *CREATE_OBJECT(const char *type, bool shouldFree, const t &value)
+inline OBJECT CREATE_OBJECT(const char *type, t value)
 {
-	return new Object{type, 0, nullptr, shouldFree, PTR_CAST(void, (uint64_t *) (&value)), new uint64_t(1)};
+	auto newValue = new t(value);
+	return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
+};
+
+template<>
+inline OBJECT CREATE_OBJECT(const char *type, const char *value)
+{
+	auto newValue = new char[strlen(value) + 1]();
+	strcpy(newValue, value);
+	return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
+};
+
+template<>
+inline OBJECT CREATE_OBJECT(const char *type, char *value)
+{
+	auto newValue = new char[strlen(value) + 1]();
+	memcpy(newValue, value, sizeof(char) * strlen(value));
+	return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 };
 
 inline void DESTROY_OBJECT(OBJECT object)
@@ -52,7 +85,13 @@ inline void DESTROY_OBJECT(OBJECT object)
 	if (*(object->references) == 0)
 	{
 		if (object->shouldFreeValue)
-			delete object->value;
+			if (object->type == "string")
+			{
+				char *value = PTR_EVAL(char *, (uint64_t *) object->value);
+				delete value;
+			}
+			else
+				delete object->value;
 		for (uint64_t i = 0; i < object->memberCount; i++)
 			DESTROY_OBJECT(object->members[i]);
 		if (object->memberCount != 0)
@@ -62,21 +101,39 @@ inline void DESTROY_OBJECT(OBJECT object)
 	}
 }
 
-/*
-const char *x = "Hello, World!";
-auto val = PTR_CAST(uint64_t, &x);
-
-std::cout << x << "\n";
-std::cout << val << "\n";
-std::cout << PTR_EVAL(const char *, val) << "\n";
-*/
-
 #define SET_ATTRIBUTE(obj, attr, val) ((obj->attr = val))
 #define GET_ATTRIBUTE(obj, attr) (obj->attr)
-#define SET_VALUE(obj, val, type) {if (obj->shouldFreeValue) {delete obj->value;}} (SET_ATTRIBUTE(obj, value, PTR_CAST(void, (type *) (val))))
-#define GET_VALUE(obj, type, stored) (PTR_EVAL(type, (stored *) obj->value))
 
-#define CREATE_INT(val) CREATE_OBJECT("int", false, val)
-#define CREATE_FLOAT(val) CREATE_OBJECT("float", false, val)
+template<typename t>
+inline void SET_VALUE(OBJECT obj, t val, const char *type = "NONE")
+{
+	if (obj->shouldFreeValue)
+		delete obj->value;
+
+	auto newValue = new t(val);
+	obj->value = PTR_CAST(void *, (uint64_t *) newValue);
+	obj->type = type;
+};
+
+#define GET_VALUE(obj, type, stored) (PTR_EVAL(type, (stored) obj->value))
+
+#define GET_TYPE(obj) (GET_ATTRIBUTE(obj, type))
+
+#define CREATE_INT(val) CREATE_OBJECT("int", INT(val))
+#define CREATE_FLOAT(val) CREATE_OBJECT("float", FLOAT(val))
+#define CREATE_STRING(val) CREATE_OBJECT("string", STRING(val))
+
+inline OBJECT COPY(OBJECT obj)
+{
+	auto newValue = new uint64_t(*PTR_CAST(uint64_t *, obj->value));
+	if (obj->memberCount != 0)
+	{
+		OBJECT *members = new OBJECT[obj->memberCount];
+		for (uint64_t i = 0; i < obj->memberCount; i++)
+			members[i] = COPY(obj->members[i]);
+		return new Object{obj->type, obj->memberCount, members, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
+	}
+	return new Object{obj->type, obj->memberCount, nullptr, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
+}
 
 #include "objectFunctions.h"
