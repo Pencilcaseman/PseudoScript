@@ -7,7 +7,7 @@ int main()
 	std::cout << std::fixed;
 	std::cout << "PseudoScript\n";
 
-	uint64_t loops = 1;
+	uint64_t loops = 1000000;
 
 	auto start = omp_get_wtime();
 	for (uint64_t i = 0; i < loops; i++)
@@ -16,7 +16,7 @@ int main()
 		auto b = CREATE_STRING("ABCDE");
 		auto c = CREATE_FLOAT(3);
 
-		auto list = CREATE_OBJECT("list", {a, b, c}, nullptr);
+		auto list = CREATE_OBJECT("list", {COPY(a), b, c}, nullptr);
 
 		SET_VALUE(a, INT(123), "int");
 
@@ -25,19 +25,19 @@ int main()
 			if (GET_TYPE(list->members[i]) == "int")
 			{
 				volatile auto val = *GET_VALUE(list->members[i], int *, uint64_t *);
-				std::cout << val << "\n";
+				// std::cout << val << "\n";
 			}
 
 			if (GET_TYPE(list->members[i]) == "float")
 			{
 				volatile auto val = *GET_VALUE(list->members[i], double *, uint64_t *);
-				std::cout << val << "\n";
+				// std::cout << val << "\n";
 			}
 
 			if (GET_TYPE(list->members[i]) == "string")
 			{
 				volatile auto val = GET_VALUE(list->members[i], const char *, uint64_t *);
-				std::cout << val << "\n";
+				// std::cout << val << "\n";
 			}
 		}
 

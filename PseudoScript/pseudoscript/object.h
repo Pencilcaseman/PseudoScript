@@ -33,18 +33,13 @@ inline OBJECT COPY(OBJECT val);
 template<typename t>
 inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT> &data, t value)
 {
-	// auto newValue = new t(value);
 	auto newValue = (t *) malloc(sizeof(t));
 	*newValue = value;
 
 	if (data.size() != 0)
 	{
-		// auto start = omp_get_wtime() * 1000000000;
 		uint64_t index = 0;
-		// OBJECT *members = new OBJECT[data.size()];
 		OBJECT *members = (OBJECT *) malloc(sizeof(OBJECT) * data.size());
-
-		// auto end = omp_get_wtime() * 1000000000;
 
 		for (auto &val : data)
 		{
@@ -53,9 +48,6 @@ inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT
 			index++;
 		}
 
-		// std::cout << "Time: " << end - start << "\n";
-
-		// return new Object{type, index, members, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 		OBJECT res = (OBJECT) malloc(sizeof(Object));
 		auto references = (uint64_t *) malloc(sizeof(uint64_t));
 		*references = 1;
@@ -63,7 +55,6 @@ inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT
 		return res;
 	}
 	
-	// return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 	OBJECT res = (OBJECT) malloc(sizeof(Object));
 	auto references = (uint64_t *) malloc(sizeof(uint64_t));
 	*references = 1;
@@ -74,11 +65,9 @@ inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT
 template<typename t>
 inline OBJECT CREATE_OBJECT(const char *type, t value)
 {
-	// auto newValue = new t(value);
 	auto newValue = (t *) malloc(sizeof(t));
 	*newValue = value;
 	
-	// return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 	OBJECT res = (OBJECT) malloc(sizeof(Object));
 	auto references = (uint64_t *) malloc(sizeof(uint64_t));
 	*references = 1;
@@ -89,11 +78,8 @@ inline OBJECT CREATE_OBJECT(const char *type, t value)
 template<>
 inline OBJECT CREATE_OBJECT(const char *type, const char *value)
 {
-	// auto newValue = new char[strlen(value) + 1]();
 	auto newValue = (char *) malloc(sizeof(char) * (strlen(value) + 1));
 	strcpy(newValue, value);
-	
-	// return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 
 	OBJECT res = (OBJECT) malloc(sizeof(Object));
 	auto references = (uint64_t *) malloc(sizeof(uint64_t));
@@ -105,11 +91,9 @@ inline OBJECT CREATE_OBJECT(const char *type, const char *value)
 template<>
 inline OBJECT CREATE_OBJECT(const char *type, char *value)
 {
-	// auto newValue = new char[strlen(value) + 1]();
 	auto newValue = (char *) malloc(sizeof(char) * (strlen(value) + 1));
 	strcpy(newValue, value);
 	
-	// return new Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 	OBJECT res = (OBJECT) malloc(sizeof(Object));
 	auto references = (uint64_t *) malloc(sizeof(uint64_t));
 	*references = 1;
