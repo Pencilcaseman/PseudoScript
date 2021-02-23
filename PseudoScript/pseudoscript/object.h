@@ -126,21 +126,16 @@ inline void DESTROY_OBJECT(OBJECT object)
 			if (object->type == "string")
 			{
 				char *value = PTR_EVAL(char *, (uint64_t *) object->value);
-				// delete value;
 				free(value);
 			}
 			else
-				// delete object->value;
 				free(object->value);
 
 		for (uint64_t i = 0; i < object->memberCount; i++)
 			DESTROY_OBJECT(object->members[i]);
 		if (object->memberCount != 0)
-			// delete[] object->members;
 			free(object->members);
 
-		// delete object->references;
-		// delete object;
 		free(object->references);
 		free(object);
 	}
@@ -153,10 +148,8 @@ template<typename t>
 inline void SET_VALUE(OBJECT obj, t val, const char *type = "NONE")
 {
 	if (obj->shouldFreeValue)
-		// delete obj->value;
 		free(obj->value);
 
-	// auto newValue = new t(val);
 	auto newValue = (t *) malloc(sizeof(t));
 	*newValue = val;
 
@@ -174,20 +167,16 @@ inline void SET_VALUE(OBJECT obj, t val, const char *type = "NONE")
 
 inline OBJECT COPY(OBJECT obj)
 {
-	// auto newValue = new uint64_t(*PTR_CAST(uint64_t *, obj->value));
-
 	auto newValue = (uint64_t *) malloc(sizeof(uint64_t));
 	*newValue = *PTR_CAST(uint64_t *, obj->value);
 
 	if (obj->memberCount != 0)
 	{
-		// OBJECT *members = new OBJECT[obj->memberCount];
 		auto members = (OBJECT *) malloc(sizeof(OBJECT) * obj->memberCount);
 
 		for (uint64_t i = 0; i < obj->memberCount; i++)
 			members[i] = COPY(obj->members[i]);
 		
-		// return new Object{obj->type, obj->memberCount, members, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 		auto res = (OBJECT) malloc(sizeof(Object));
 		auto references = (uint64_t *) malloc(sizeof(uint64_t));
 		*references = 1;
@@ -195,7 +184,6 @@ inline OBJECT COPY(OBJECT obj)
 		return res;
 	}
 	
-	// return new Object{obj->type, obj->memberCount, nullptr, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), new uint64_t(1)};
 	auto res = (OBJECT) malloc(sizeof(Object));
 	auto references = (uint64_t *) malloc(sizeof(uint64_t));
 	*references = 1;
