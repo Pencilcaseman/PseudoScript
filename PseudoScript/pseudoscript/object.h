@@ -1,5 +1,17 @@
 #pragma once
 
+/*
+Notes:
+
+---------------------------------------------------------------------
+
+Reverse functions are called when a given object does not implement a
+required function, or a "NotImplemented" error is thrown
+
+---------------------------------------------------------------------
+
+*/
+
 #include "allocator.h"
 
 // Typedefs
@@ -78,8 +90,22 @@ typedef struct TypeObject
 	Object *(*tp_alloc)(TypeObject *self, UINT nItems);    // Allocate memory for an object of this type
 	void (*tp_free)(void *obj);                            // Free an object of a given type
 	GetSet *tp_getset;                                     // Getters and setters
-	MemberDef *members;                                    // Member definitions for the type
-	MethodDef *methods;                                    // Method definitions for the type
+	Object *(*tp_value)(Object *self);                     // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	Object *(*tp_toString)(Object *self);                  // Return a string representation of the value
+	Object *(*tp_toInt)(Object *self);					   // Return an integer representation of the value
+	Object *(*tp_toFloat)(Object *self);                   // Return a floating point representation of the value
+	Object *(*tp_add)(Object *self, Object *args);         // Return the result of addition
+	Object *(*tp_sub)(Object *self, Object *args);         // Return the result of subtraction
+	Object *(*tp_mul)(Object *self, Object *args);         // Return the result of multiplication
+	Object *(*tp_div)(Object *self, Object *args);         // Return the result of division
+	Object *(*tp_pow)(Object *self, Object *args);         // Return the result of raising to the power of a value
+	Object *(*tp_reverseAdd)(Object *self, Object *args);  // Return the result of reverse addition -- see notes ^^^
+	Object *(*tp_reverseSub)(Object *self, Object *args);  // Return the result of reverse subtraction -- see notes ^^^
+	Object *(*tp_reverseMul)(Object *self, Object *args);  // Return the result of reverse multiplication -- see notes ^^^
+	Object *(*tp_reverseDiv)(Object *self, Object *args);  // Return the result of reverse division -- see notes ^^^
+	Object *(*tp_reversePow)(Object *self, Object *args);  // Return the result of the reverse power -- see notes ^^^
+	MemberDef *tp_members;                                 // Member definitions for the type
+	MethodDef *tp_methods;                                 // Method definitions for the type
 } TypeObject;
 
 #define OB_BASE Object ob_base
@@ -94,3 +120,7 @@ Object *_new_object(TypeObject *type)
 }
 
 #define newObject(object, type) ((object *) _new_object(type))
+
+// Provide default functions for most methods
+
+

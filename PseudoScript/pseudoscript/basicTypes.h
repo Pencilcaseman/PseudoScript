@@ -56,33 +56,54 @@ static int BasicInt_init(BasicInt *self, Object *args)
 Object *newInt(INT value);
 
 /*
-Create a new integral value. This is the only
-way to create a new integer object
+Getters and setters for the integral type
 */
-static Object *BasicInt_get_value(BasicInt *self)
+static GetSet BasicInt_getset[] = {
+	{nullptr}
+};
+
+/*
+Access the exact value stored
+*/
+static Object *BasicInt_value(BasicInt *self)
 {
 	return newInt(self->value);
 }
 
 /*
-Getters and setters for the integral type
+Convert to string
 */
-static GetSet BasicInt_getset[] = {
-	{"value", (getter) BasicInt_get_value, nullptr},
-	{nullptr}
-};
+static Object *BasicInt_toString(BasicInt *self)
+{
+	// return newString(self->value);
+	return nullptr;
+}
 
 static TypeObject BasicInt_type = {
-	"int",
-	sizeof(BasicInt),
-	BasicInt_new,
-	(initFunc) BasicInt_init,
-	BasicInt_dealloc,
-	BasicInt_alloc,
-	BasicInt_free,
-	BasicInt_getset,
-	nullptr,
-	nullptr
+	"int",                         // Name of type
+	sizeof(BasicInt),              // Size of the object in bytes
+	BasicInt_new,                  // Allocate a new object and return a pointer to it
+	(initFunc) BasicInt_init,      // Initialize an object
+	BasicInt_dealloc,              // Free an object that has been created
+	BasicInt_alloc,                // Allocate memory for an object of this type
+	BasicInt_free,                 // Free an object of a given type
+	BasicInt_getset,               // Getters and setters
+	(CFunction) BasicInt_value,    // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	nullptr                        // Return a string representation of the value
+	// Return an integer representation of the value
+	// Return a floating point representation of the value
+	// Return the result of addition
+	// Return the result of subtraction
+	// Return the result of multiplication
+	// Return the result of division
+	// Return the result of raising to the power of a value
+	// Return the result of reverse addition -- see notes ^^^
+	// Return the result of reverse subtraction -- see notes ^^^
+	// Return the result of reverse multiplication -- see notes ^^^
+	// Return the result of reverse division -- see notes ^^^
+	// Return the result of the reverse power -- see notes ^^^
+	// Member definitions for the type
+	// Method definitions for the type
 };
 
 Object *newInt(INT value)
@@ -91,6 +112,17 @@ Object *newInt(INT value)
 	res->value = value;
 	return (Object *) res;
 }
+
+#ifdef PS_DEBUG
+UINT OB_INT_TO_C(Object *x)
+{
+	if (OB_TYPE(x)->tp_name != "int")
+		throw std::logic_error("Invalid variable type to cast to C INT");
+	return ((*((BasicInt *) x)).value);
+}
+#else
+#define OB_INT_TO_C(x) ((*((BasicInt *) x)).value)
+#endif
 
 // ============================================================================================
 
@@ -145,16 +177,30 @@ static GetSet BasicFloat_getset[] = {
 };
 
 static TypeObject BasicFloat_type = {
-	"float",
-	sizeof(BasicFloat),
-	BasicFloat_new,
-	(initFunc) BasicFloat_init,
-	BasicFloat_dealloc,
-	BasicFloat_alloc,
-	BasicFloat_free,
-	BasicFloat_getset,
-	nullptr,
-	nullptr
+	"float",                    // Name of type
+	sizeof(BasicFloat),         // Size of the object in bytes
+	BasicFloat_new,             // Allocate a new object and return a pointer to it
+	(initFunc) BasicFloat_init, // Initialize an object
+	BasicFloat_dealloc,         // Free an object that has been created
+	BasicFloat_alloc,           // Allocate memory for an object of this type
+	BasicFloat_free,            // Free an object of a given type
+	BasicFloat_getset,          // Getters and setters
+	nullptr,                    // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	nullptr                     // Return a string representation of the value
+	// Return an integer representation of the value
+	// Return a floating point representation of the value
+	// Return the result of addition
+	// Return the result of subtraction
+	// Return the result of multiplication
+	// Return the result of division
+	// Return the result of raising to the power of a value
+	// Return the result of reverse addition -- see notes ^^^
+	// Return the result of reverse subtraction -- see notes ^^^
+	// Return the result of reverse multiplication -- see notes ^^^
+	// Return the result of reverse division -- see notes ^^^
+	// Return the result of the reverse power -- see notes ^^^
+	// Member definitions for the type
+	// Method definitions for the type
 };
 
 Object *newFloat(FLOAT value)
@@ -163,3 +209,14 @@ Object *newFloat(FLOAT value)
 	res->value = value;
 	return (Object *) res;
 }
+
+#ifdef PS_DEBUG
+UINT OB_FLOAT_TO_C(Object *x)
+{
+	if (OB_TYPE(x)->tp_name != "int")
+		throw std::logic_error("Invalid variable type to cast to C INT");
+	return ((*((BasicFloat *) x)).value);
+}
+#else
+#define OB_FLOAT_TO_C(x) ((*((BasicFloat *) x)).value)
+#endif
