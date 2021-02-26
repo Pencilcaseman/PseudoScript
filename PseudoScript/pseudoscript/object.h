@@ -1,178 +1,96 @@
 #pragma once
 
-#include <cstring>
-#include <cstdint>
+#include "allocator.h"
 
-#pragma warning(disable : 4996)
-
-#define OBJECT Object *
-#define INT(x) int64_t(x)
-#define FLOAT(x) double(x)
-#define STRING(x) ((const char *) (x))
+// Typedefs
+typedef long long INT;
+typedef unsigned long long UINT;
+typedef double FLOAT;
 
 typedef struct Object Object;
+typedef struct TypeObject TypeObject;
 
+/*
+The base object type, storing the number
+of references to the object and it's base type.
+
+This object should never be created explicitly, but
+casted to an (Object *)
+*/
 typedef struct Object
 {
-	const char *type;
-	unsigned long long memberCount;
-	Object **members;
-	bool shouldFreeValue;
-	void *value;
-	uint64_t *references;
+	UINT ob_ref;
+	TypeObject *ob_type;
 } Object;
 
-#define INC_REF(obj) (*obj->references)++
-#define DEC_REF(obj) (*obj->references)--
+typedef Object *(*getter)(Object *);
+typedef int (*setter)(Object *, Object *);
+typedef int(*initFunc)(Object *self, Object *args);
+typedef Object *(*CFunction)(Object *);
 
-#define PTR_CAST(ret, val) (ret) (val)
-#define PTR_EVAL(type, val) ((type) (val))
-
-inline OBJECT COPY(OBJECT val);
-
-template<typename t>
-inline OBJECT CREATE_OBJECT(const char *type, const std::initializer_list<OBJECT> &data, t value)
+/*
+A type to store member/method getters and setters
+*/
+typedef struct
 {
-	auto newValue = (t *) malloc(sizeof(t));
-	*newValue = value;
+	const char *gs_name;
+	Object *(*gs_get)(Object *self);
+	int (*gs_set)(Object *self, Object *value);
+} GetSet;
 
-	if (data.size() != 0)
-	{
-		uint64_t index = 0;
-		OBJECT *members = (OBJECT *) malloc(sizeof(OBJECT) * data.size());
+#define T_INT 0;
+#define T_FLOAT 1;
+#define T_DOUBLE 2;
+#define T_STRING 3;
 
-		for (auto &val : data)
-		{
-			INC_REF(val);
-			members[index] = val; // COPY(val);
-			index++;
-		}
-
-		OBJECT res = (OBJECT) malloc(sizeof(Object));
-		auto references = (uint64_t *) malloc(sizeof(uint64_t));
-		*references = 1;
-		*res = Object{type, index, members, true, PTR_CAST(void *, (uint64_t *) newValue), references};
-		return res;
-	}
-	
-	OBJECT res = (OBJECT) malloc(sizeof(Object));
-	auto references = (uint64_t *) malloc(sizeof(uint64_t));
-	*references = 1;
-	*res = Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), references};
-	return res;
-};
-
-template<typename t>
-inline OBJECT CREATE_OBJECT(const char *type, t value)
+/*
+Defines a member of a class or object, storing the name,
+type, and value to be contained
+*/
+typedef struct
 {
-	auto newValue = (t *) malloc(sizeof(t));
-	*newValue = value;
-	
-	OBJECT res = (OBJECT) malloc(sizeof(Object));
-	auto references = (uint64_t *) malloc(sizeof(uint64_t));
-	*references = 1;
-	*res = Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), references};
-	return res;
-};
+	const char *mm_name;
+	UINT mm_type;
+	void *mm_value;
+} MemberDef;
 
-template<>
-inline OBJECT CREATE_OBJECT(const char *type, const char *value)
+/*
+Defines a method of a class, storing the name and a
+pointer to the C implementation
+*/
+typedef struct
 {
-	auto newValue = (char *) malloc(sizeof(char) * (strlen(value) + 1));
-	strcpy(newValue, value);
+	const char *mt_name;
+	Object *(*mt_meth)(Object *);
+} MethodDef;
 
-	OBJECT res = (OBJECT) malloc(sizeof(Object));
-	auto references = (uint64_t *) malloc(sizeof(uint64_t));
-	*references = 1;
-	*res = Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), references};
-	return res;
-};
-
-template<>
-inline OBJECT CREATE_OBJECT(const char *type, char *value)
+/*
+Used to store any type information, such as members, methods
+name, size, built-in functions, etc.
+*/
+typedef struct TypeObject
 {
-	auto newValue = (char *) malloc(sizeof(char) * (strlen(value) + 1));
-	strcpy(newValue, value);
-	
-	OBJECT res = (OBJECT) malloc(sizeof(Object));
-	auto references = (uint64_t *) malloc(sizeof(uint64_t));
-	*references = 1;
-	*res = Object{type, 0, nullptr, true, PTR_CAST(void *, (uint64_t *) newValue), references};
-	return res;
-};
+	const char *tp_name;                                   // Name of type
+	UINT tp_size;                                          // Size of the object in bytes
+	Object *(*tp_new)(TypeObject *type, Object *args);     // Allocate a new object and return a pointer to it
+	int (*tp_init)(Object *self, Object *args);            // Initialize an object
+	void (*tp_dealloc)(Object *self);                      // Free an object that has been created
+	Object *(*tp_alloc)(TypeObject *self, UINT nItems);    // Allocate memory for an object of this type
+	void (*tp_free)(void *obj);                            // Free an object of a given type
+	GetSet *tp_getset;                                     // Getters and setters
+	MemberDef *members;                                    // Member definitions for the type
+	MethodDef *methods;                                    // Method definitions for the type
+} TypeObject;
 
-inline void DESTROY_OBJECT(OBJECT object)
+#define OB_BASE Object ob_base
+#define OB_TYPE(x) (((Object *) (x))->ob_type)
+
+Object *_new_object(TypeObject *type)
 {
-	DEC_REF(object);
-	if (*(object->references) == 0)
-	{
-		if (object->shouldFreeValue)
-			if (object->type == "string")
-			{
-				char *value = PTR_EVAL(char *, (uint64_t *) object->value);
-				free(value);
-			}
-			else
-				free(object->value);
-
-		for (uint64_t i = 0; i < object->memberCount; i++)
-			DESTROY_OBJECT(object->members[i]);
-		if (object->memberCount != 0)
-			free(object->members);
-
-		free(object->references);
-		free(object);
-	}
-}
-
-#define SET_ATTRIBUTE(obj, attr, val) ((obj->attr = val))
-#define GET_ATTRIBUTE(obj, attr) (obj->attr)
-
-template<typename t>
-inline void SET_VALUE(OBJECT obj, t val, const char *type = "NONE")
-{
-	if (obj->shouldFreeValue)
-		free(obj->value);
-
-	auto newValue = (t *) malloc(sizeof(t));
-	*newValue = val;
-
-	obj->value = PTR_CAST(void *, (uint64_t *) newValue);
-	obj->type = type;
-};
-
-#define GET_VALUE(obj, type, stored) (PTR_EVAL(type, (stored) obj->value))
-
-#define GET_TYPE(obj) (GET_ATTRIBUTE(obj, type))
-
-#define CREATE_INT(val) CREATE_OBJECT("int", INT(val))
-#define CREATE_FLOAT(val) CREATE_OBJECT("float", FLOAT(val))
-#define CREATE_STRING(val) CREATE_OBJECT("string", STRING(val))
-
-inline OBJECT COPY(OBJECT obj)
-{
-	auto newValue = (uint64_t *) malloc(sizeof(uint64_t));
-	*newValue = *PTR_CAST(uint64_t *, obj->value);
-
-	if (obj->memberCount != 0)
-	{
-		auto members = (OBJECT *) malloc(sizeof(OBJECT) * obj->memberCount);
-
-		for (uint64_t i = 0; i < obj->memberCount; i++)
-			members[i] = COPY(obj->members[i]);
-		
-		auto res = (OBJECT) malloc(sizeof(Object));
-		auto references = (uint64_t *) malloc(sizeof(uint64_t));
-		*references = 1;
-		*res = Object{obj->type, obj->memberCount, members, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), references};
-		return res;
-	}
-	
-	auto res = (OBJECT) malloc(sizeof(Object));
-	auto references = (uint64_t *) malloc(sizeof(uint64_t));
-	*references = 1;
-	*res = Object{obj->type, obj->memberCount, nullptr, obj->shouldFreeValue, PTR_CAST(void *, (uint64_t *) newValue), references};
+	Object *res = (Object *) OB_MALLOC(type->tp_size);
+	res->ob_ref = 0;
+	res->ob_type = type;
 	return res;
 }
 
-#include "objectFunctions.h"
+#define newObject(object, type) ((object *) _new_object(type))

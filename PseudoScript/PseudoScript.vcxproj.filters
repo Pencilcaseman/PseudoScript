@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="V1\PseudoScript_old.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -26,19 +23,13 @@
     <ClInclude Include="pseudoscript\pseudoscript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="V1\pseudoscript_v1\interpreter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="V1\pseudoscript_v1\pseudoscript.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="V1\pseudoscript_v1\utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="pseudoscript\object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pseudoscript\objectFunctions.h">
+    <ClInclude Include="pseudoscript\allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pseudoscript\basicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
