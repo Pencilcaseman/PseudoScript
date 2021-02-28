@@ -32,16 +32,14 @@ int main()
 
 	std::cout << "\n\n\n";
 
-	auto linter = Lexer("numb = 1234.5678;"
-						 "print(\"Hello, World!\");"
-						 // "myList = [1, 2, 3, 4]"
-	);
+	auto linter = Lexer({"numb = 3.141.5;",
+						 "print(\"Hello, World!\");"});
 	
 	auto res = linter.tokenize();
 
-	if (res.second != -1)
+	if (res.details != "PASSED")
 	{
-		std::cout << "Linter error: \"" << res.first << "\" at position " << res.second << "\n";
+		std::cout << "Linter error: \"" << res.details << "\" at position " << res.line << ":" << res.charPos << "\n";
 	}
 	else
 	{

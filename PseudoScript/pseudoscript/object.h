@@ -40,6 +40,7 @@ typedef Object *(*getter)(Object *);
 typedef int (*setter)(Object *, Object *);
 typedef int(*initFunc)(Object *self, Object *args);
 typedef Object *(*CFunction)(Object *);
+typedef Object *(*PseudoFunc)(Object *self, Object *args);
 
 /*
 A type to store member/method getters and setters
