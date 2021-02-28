@@ -18,6 +18,7 @@ required function, or a "NotImplemented" error is thrown
 typedef long long INT;
 typedef unsigned long long UINT;
 typedef double FLOAT;
+typedef const char * STRING;
 
 typedef struct Object Object;
 typedef struct TypeObject TypeObject;

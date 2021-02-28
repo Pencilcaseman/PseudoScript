@@ -1,6 +1,14 @@
 #pragma once
 
+#include <cstdio>
 #include "object.h"
+
+// Important function forward-declares
+Object *newInt(INT value);
+Object *newFloat(FLOAT value);
+Object *newString(STRING value);
+
+// ====================================================================================
 
 /*
 The base integer type. This is used to
@@ -75,8 +83,10 @@ Convert to string
 */
 static Object *BasicInt_toString(BasicInt *self)
 {
-	// return newString(self->value);
-	return nullptr;
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10(self->value)) + 1));
+#pragma warning(suppress : 4996)
+	sprintf(res, "%i", (int) self->value);
+	return newString(res);
 }
 
 static TypeObject BasicInt_type = {
@@ -89,7 +99,7 @@ static TypeObject BasicInt_type = {
 	BasicInt_free,                 // Free an object of a given type
 	BasicInt_getset,               // Getters and setters
 	(CFunction) BasicInt_value,    // Return the EXACT value stored -- i.e. \"Hello, World!\"
-	nullptr                        // Return a string representation of the value
+	(CFunction) BasicInt_toString  // Return a string representation of the value
 	// Return an integer representation of the value
 	// Return a floating point representation of the value
 	// Return the result of addition
@@ -114,7 +124,7 @@ Object *newInt(INT value)
 }
 
 #ifdef PS_DEBUG
-UINT OB_INT_TO_C(Object *x)
+INT OB_INT_TO_C(Object *x)
 {
 	if (OB_TYPE(x)->tp_name != "int")
 		throw std::logic_error("Invalid variable type to cast to C INT");
@@ -211,12 +221,116 @@ Object *newFloat(FLOAT value)
 }
 
 #ifdef PS_DEBUG
-UINT OB_FLOAT_TO_C(Object *x)
+double OB_FLOAT_TO_C(Object *x)
 {
-	if (OB_TYPE(x)->tp_name != "int")
-		throw std::logic_error("Invalid variable type to cast to C INT");
+	if (OB_TYPE(x)->tp_name != "float")
+		throw std::logic_error("Invalid variable type to cast to C FLOAT");
 	return ((*((BasicFloat *) x)).value);
 }
 #else
 #define OB_FLOAT_TO_C(x) ((*((BasicFloat *) x)).value)
+#endif
+
+// ===========================================================================================
+
+typedef struct
+{
+	OB_BASE;
+	STRING value;
+} BasicString;
+
+static Object *BasicString_alloc(TypeObject *self, UINT nItems)
+{
+	return (Object *) OB_MALLOC(self->tp_size * (nItems == 0 ? 1 : nItems));
+}
+
+static void BasicString_free(void *self)
+{
+	OB_FREE(self);
+}
+
+static void BasicString_dealloc(Object *self)
+{
+	OB_TYPE(self)->tp_free(self);
+}
+
+static Object *BasicString_new(TypeObject *type, Object *args)
+{
+	auto self = (BasicString *) type->tp_alloc(type, 0);
+
+	if (self != nullptr)
+		self->value = "";
+
+	return (Object *) self;
+}
+
+static int BasicString_init(BasicInt *self, Object *args)
+{
+	return 0;
+}
+
+static GetSet BasicString_getset[] = {
+	{nullptr}
+};
+
+static Object *BasicString_value(BasicString *self)
+{
+	auto resStr = (char *) OB_MALLOC(sizeof(char) * (strlen(self->value) + 2));
+#pragma warning(suppress : 4996)
+	strcat(resStr, "\"");
+#pragma warning(suppress : 4996)
+	strcat(resStr, self->value);
+#pragma warning(suppress : 4996)
+	strcat(resStr, "\"");
+	return newString(resStr);
+}
+
+static Object *BasicString_toString(BasicString *self)
+{
+	return newString(self->value);
+}
+
+static TypeObject BasicString_type = {
+	"string",                      // Name of type
+	sizeof(BasicString),              // Size of the object in bytes
+	BasicString_new,                  // Allocate a new object and return a pointer to it
+	(initFunc) BasicString_init,      // Initialize an object
+	BasicString_dealloc,              // Free an object that has been created
+	BasicString_alloc,                // Allocate memory for an object of this type
+	BasicString_free,                 // Free an object of a given type
+	BasicString_getset,               // Getters and setters
+	(CFunction) BasicString_value,    // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	(CFunction) BasicString_toString  // Return a string representation of the value
+	// Return an integer representation of the value
+	// Return a floating point representation of the value
+	// Return the result of addition
+	// Return the result of subtraction
+	// Return the result of multiplication
+	// Return the result of division
+	// Return the result of raising to the power of a value
+	// Return the result of reverse addition -- see notes ^^^
+	// Return the result of reverse subtraction -- see notes ^^^
+	// Return the result of reverse multiplication -- see notes ^^^
+	// Return the result of reverse division -- see notes ^^^
+	// Return the result of the reverse power -- see notes ^^^
+	// Member definitions for the type
+	// Method definitions for the type
+};
+
+Object *newString(STRING value)
+{
+	auto res = newObject(BasicString, &BasicString_type);
+	res->value = value;
+	return (Object *) res;
+}
+
+#ifdef PS_DEBUG
+STRING OB_STRING_TO_C(Object *x)
+{
+	if (OB_TYPE(x)->tp_name != "string")
+		throw std::logic_error("Invalid variable type to cast to C STRING");
+	return ((*((BasicString *) x)).value);
+}
+#else
+#define OB_STRING_TO_C(x) ((*((BasicString *) x)).value)
 #endif

@@ -19,12 +19,36 @@ int main()
 
 	auto a = newInt(123);
 	auto b = newFloat(3.1415);
+	auto c = newString("Hello, World!");
 
 	std::cout << "Value: " << OB_INT_TO_C(a) << "\n";
 	std::cout << "Value: " << OB_FLOAT_TO_C(b) << "\n";
+	std::cout << "Value: " << OB_STRING_TO_C(c) << "\n";
+	std::cout << "Value: " << OB_STRING_TO_C(OB_TYPE(c)->tp_value(c)) << "\n";
 
 	OB_TYPE(a)->tp_dealloc(a);
 	OB_TYPE(b)->tp_dealloc(b);
+	OB_TYPE(c)->tp_dealloc(c);
+
+	std::cout << "\n\n\n";
+
+	auto linter = Linter("numb = 1234.5678;"
+						 "print(\"Hello, World!\");"
+						 "myList = [1, 2, 3, 4]");
+	  
+	auto res = linter.tokenize();
+
+	if (res.second != -1)
+	{
+		std::cout << "Linter error: \"" << res.first << "\" at position " << res.second << "\n";
+	}
+	else
+	{
+		for (const auto &token : linter.tokenized)
+		{
+			std::cout << "Token: " << token.name << " | " << token.value << "\n";
+		}
+	}
 
 	return 0;
 }

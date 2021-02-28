@@ -52,6 +52,9 @@ Allocator *newAllocator(unsigned long long bytes)
 
 	res->data = (char *) malloc(bytes);
 
+	for (unsigned long long i = 0; i < bytes; i++)
+		res->data[i] = 0;
+
 	return res;
 }
 

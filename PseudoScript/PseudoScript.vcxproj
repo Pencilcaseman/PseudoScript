@@ -109,7 +109,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <DisableSpecificWarnings>6011;6386</DisableSpecificWarnings>
+      <DisableSpecificWarnings>6011;6386;4996</DisableSpecificWarnings>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -147,7 +147,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <DisableSpecificWarnings>6011;6386</DisableSpecificWarnings>
+      <DisableSpecificWarnings>6011;6386;4996</DisableSpecificWarnings>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -163,8 +163,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pseudoscript\allocator.h" />
+    <ClInclude Include="pseudoscript\grammar\tokens.h" />
+    <ClInclude Include="pseudoscript\linter.h" />
     <ClInclude Include="pseudoscript\object.h" />
     <ClInclude Include="pseudoscript\basicTypes.h" />
+    <ClInclude Include="pseudoscript\parser.h" />
     <ClInclude Include="pseudoscript\pseudoscript.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
