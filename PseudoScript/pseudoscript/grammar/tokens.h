@@ -7,6 +7,7 @@ using Token = struct
 {
 	std::string name;
 	std::string value;
+	unsigned long long line;
 };
 
 std::vector<Token> getTokens()

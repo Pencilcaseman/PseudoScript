@@ -10,7 +10,7 @@ using STRING = const char *;
 
 #define DEBUG_POINT std::cout << "Debug Point: Line " << __LINE__ << "\n";
 
-using LexerError = struct  
+using LexerError = struct
 {
 	std::string details;
 	UINT line;
@@ -41,6 +41,7 @@ public:
 
 	inline LexerError tokenize()
 	{
+		std::vector<Token> generated;
 		auto tokens = getTokens();
 
 		// while (index < program[line].length())
@@ -60,14 +61,14 @@ public:
 					if (token.name == "DQUOTE" || token.name == "SQUOTE")
 					{
 						auto literalLen = checkStringLiteral(program[line], index + 1, token.value);
-						tokenized.emplace_back(Token{"STRINGLITERAL", std::string(program[line].begin() + index, program[line].begin() + index + literalLen + 1)});
+						generated.emplace_back(Token{"STRINGLITERAL", std::string(program[line].begin() + index, program[line].begin() + index + literalLen + 1), line});
 						foundToken = true;
 						advance(literalLen + 1);
 						break;
 					}
 
 					// Found the token, so add to list
-					tokenized.emplace_back(token);
+					generated.emplace_back(Token{token.name, token.value, line});
 					foundToken = true;
 					advance();
 					break;
@@ -83,13 +84,13 @@ public:
 
 				if (points == 0)
 				{
-					tokenized.emplace_back(Token{"INT", std::string(program[line].begin() + index, program[line].begin() + index + numLen)});
+					generated.emplace_back(Token{"INT", std::string(program[line].begin() + index, program[line].begin() + index + numLen), line});
 					foundToken = true;
 					advance(numLen);
 				}
 				else if (points == 1)
 				{
-					tokenized.emplace_back(Token{"FLOAT", std::string(program[line].begin() + index, program[line].begin() + index + numLen)});
+					generated.emplace_back(Token{"FLOAT", std::string(program[line].begin() + index, program[line].begin() + index + numLen), line});
 					foundToken = true;
 					advance(numLen);
 				}
@@ -101,13 +102,37 @@ public:
 			{
 				// Character was not in the list of tokens, so check for numbers and alphanumeric values
 				auto alphaLen = checkAlphaNum(program[line], index, tokens);
-				tokenized.emplace_back(Token{"ALPHANUM", std::string(program[line].begin() + index, program[line].begin() + index + alphaLen)});
+				generated.emplace_back(Token{"ALPHANUM", std::string(program[line].begin() + index, program[line].begin() + index + alphaLen), line});
 				foundToken = true;
 				advance(alphaLen);
 			}
 
 			if (!foundToken)
 				return {"Invalid character " + std::string(1, program[line][index]), line, index};
+		}
+
+		// Process the generated expressions
+		for (UINT i = 0; i < generated.size(); i++)
+		{
+			if (generated[i].name == "EQ" && generated[i + 1].name == "EQ")
+			{
+				tokenized.emplace_back(Token{"EQUALITY", "==", generated[i].line});
+				i++;
+			}
+			else if (generated[i].name == "GT" && generated[i + 1].name == "EQ")
+			{
+				tokenized.emplace_back(Token{"GTE", ">=", generated[i].line});
+				i++;
+			}
+			else if (generated[i].name == "LT" && generated[i + 1].name == "EQ")
+			{
+				tokenized.emplace_back(Token{"LTE", "<=", generated[i].line});
+				i++;
+			}
+			else if (generated[i].name != "SPACE" && generated[i].name != "TAB")
+			{
+				tokenized.emplace_back(generated[i]);
+			}
 		}
 
 		return {"PASSED", (UINT) -1, (UINT) -1};

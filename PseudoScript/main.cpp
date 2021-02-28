@@ -32,10 +32,9 @@ int main()
 
 	std::cout << "\n\n\n";
 
-	auto linter = Lexer({"numb = 3.141.5;",
-						 "print(\"Hello, World!\");"});
+	auto lexer = Lexer({"abc = 3.1415;"});
 	
-	auto res = linter.tokenize();
+	auto res = lexer.tokenize();
 
 	if (res.details != "PASSED")
 	{
@@ -43,10 +42,19 @@ int main()
 	}
 	else
 	{
-		for (const auto &token : linter.tokenized)
+		for (const auto &token : lexer.tokenized)
 		{
-			std::cout << "Token: " << token.name << " | " << token.value << "\n";
+			std::cout << "Line " << token.line << ": " << token.name << " | " << token.value << "\n";
 		}
+	}
+
+	Parser parser(lexer.tokenized);
+
+	auto res2 = parser.generateAST();
+
+	if (res2.details != "PASSED")
+	{
+		std::cout << "Error: " << res2.details << " at line " << res2.line << "\n";
 	}
 
 	return 0;
