@@ -32,13 +32,13 @@
     <ClInclude Include="pseudoscript\basicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pseudoscript\linter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="pseudoscript\grammar\tokens.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pseudoscript\parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pseudoscript\lexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

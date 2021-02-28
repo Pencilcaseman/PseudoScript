@@ -164,7 +164,7 @@
   <ItemGroup>
     <ClInclude Include="pseudoscript\allocator.h" />
     <ClInclude Include="pseudoscript\grammar\tokens.h" />
-    <ClInclude Include="pseudoscript\linter.h" />
+    <ClInclude Include="pseudoscript\lexer.h" />
     <ClInclude Include="pseudoscript\object.h" />
     <ClInclude Include="pseudoscript\basicTypes.h" />
     <ClInclude Include="pseudoscript\parser.h" />

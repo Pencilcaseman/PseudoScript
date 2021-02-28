@@ -5,5 +5,5 @@
 #include "allocator.h"
 #include "object.h"
 #include "basicTypes.h"
-#include "linter.h"
+#include "lexer.h"
 #include "parser.h"

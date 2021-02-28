@@ -61,8 +61,6 @@ static int BasicInt_init(BasicInt *self, Object *args)
 	return 0;
 }
 
-Object *newInt(INT value);
-
 /*
 Getters and setters for the integral type
 */

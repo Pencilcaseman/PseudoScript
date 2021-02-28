@@ -8,14 +8,14 @@ using UINT = unsigned long long;
 using INT = long long;
 using STRING = const char *;
 
-class Linter
+class Lexer
 {
 public:
 	std::string program;
 	std::vector<Token> tokenized;
 	UINT index;
 
-	Linter(const std::string &p) : program(p), index(0)
+	Lexer(const std::string &p) : program(p), index(0)
 	{}
 
 	inline void advance(UINT len = 1)

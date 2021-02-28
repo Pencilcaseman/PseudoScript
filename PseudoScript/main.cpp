@@ -32,10 +32,11 @@ int main()
 
 	std::cout << "\n\n\n";
 
-	auto linter = Linter("numb = 1234.5678;"
+	auto linter = Lexer("numb = 1234.5678;"
 						 "print(\"Hello, World!\");"
-						 "myList = [1, 2, 3, 4]");
-	  
+						 // "myList = [1, 2, 3, 4]"
+	);
+	
 	auto res = linter.tokenize();
 
 	if (res.second != -1)
