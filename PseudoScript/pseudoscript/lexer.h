@@ -220,5 +220,7 @@ public:
 				return tmpIndex - pos;
 			}
 		}
+
+		return tmpIndex - pos;
 	}
 };

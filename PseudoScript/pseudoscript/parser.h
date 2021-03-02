@@ -69,18 +69,16 @@ static Object *BinaryOperation_represent(BinaryOperation *self)
 	const char *operation = OB_STRING_TO_C(OB_TYPE(self->operation)->tp_toString(self->operation));
 	const char *right = OB_STRING_TO_C(OB_TYPE(self->right)->tp_toString(self->right));
 
-	std::cout << "Info: " << left << ", " << operation << ", " << right << "\n";
-
 	auto leftLen = strlen(left);
 	auto opLen = strlen(operation);
 	auto rightLen = strlen(right);
 
-	auto resLen = leftLen + opLen + rightLen;
+	auto resLen = leftLen + opLen + rightLen + 6;
 
 	char *res = (char *) OB_MALLOC(sizeof(char) * resLen);
 
 #pragma warning(suppress : 4996)
-	sprintf(res, "%s%s%s", left, operation, right);
+	sprintf(res, "(%s, %s, %s)", left, operation, right);
 
 	return newString(res);
 }
@@ -133,6 +131,7 @@ public:
 	std::vector<Token> tokenized;
 	UINT index;
 	Token currentToken;
+	std::string errorDetails = "NONE";
 
 	Parser(const std::vector<Token> &lexerOutput) : tokenized(lexerOutput), index(0)
 	{
@@ -149,9 +148,9 @@ public:
 		return tokenized[index++];
 	}
 
-	inline Object *error() const
+	inline Object *error(const std::string &description = "NONE")
 	{
-		std::cout << "Syntax Error\n";
+		errorDetails = description;
 		return nullptr;
 	}
 
@@ -162,12 +161,36 @@ public:
 			currentToken = nextToken();
 			return (Object *) (void *) 1;
 		}
-		return error();
+		return error("Syntax Error: Expected type '" + std::string(type) + "'");
 	}
 
 	inline Object *factor()
 	{
 		Token token = currentToken;
+
+		if (currentToken.name == "SUB")
+		{
+			if (eat("SUB") == nullptr)
+				return nullptr;
+
+			token = currentToken;
+
+			if (currentToken.name == "INT")
+			{
+				if (eat("INT") == nullptr)
+					return nullptr;
+				return newInt(-std::stoll(token.value));
+			}
+
+			if (currentToken.name == "FLOAT")
+			{
+				if (eat("FLOAT") == nullptr)
+					return nullptr;
+				return newFloat(-std::stod(token.value));
+			}
+
+			return nullptr;
+		}
 
 		if (currentToken.name == "INT")
 		{
@@ -193,7 +216,7 @@ public:
 			return node;
 		}
 
-		return error();
+		return error("Syntax Error: Unable to find variable or number literal");
 	}
 
 	inline Object *term()
@@ -208,13 +231,28 @@ public:
 			Token token = currentToken;
 
 			if (token.name == "MUL")
-				eat("MUL");
+			{
+				if (eat("MUL") == nullptr)
+				{
+					return error("Syntax Error: Expected '*'");
+				}
+			}
 			else if (token.name == "DIV")
-				eat("DIV");
+			{
+				if (eat("DIV") == nullptr)
+				{
+					return error("Syntax Error: Expected '/'");
+				}
+			}
 
 			char *name = (char *) OB_MALLOC(sizeof(char) * token.name.length());
 			memcpy(name, token.name.c_str(), sizeof(char) * token.name.length());
-			node = newBinaryOperation(node, newString(name), term());
+
+			auto right = term();
+			if (right == nullptr)
+				return error("Syntax Error: Expected term");
+
+			node = newBinaryOperation(node, newString(name), right);
 		}
 
 		return node;
@@ -232,13 +270,28 @@ public:
 			Token token = currentToken;
 
 			if (token.name == "ADD")
-				eat("ADD");
-			else if (token.name == "DIV")
-				eat("DIV");
+			{
+				if (eat("ADD") == nullptr)
+				{
+					return error("Syntax Error: Expected '+'");
+				}
+			}
+			else if (token.name == "SUB")
+			{
+				if (eat("SUB") == nullptr)
+				{
+					return error("Syntax Error: Expected '-'");
+				}
+			}
 
 			char *name = (char *) OB_MALLOC(sizeof(char) * token.name.length());
 			memcpy(name, token.name.c_str(), sizeof(char) * token.name.length());
-			node = newBinaryOperation(node, newString(name), term());
+
+			auto right = term();
+			if (right == nullptr)
+				return error("Syntax Error: Expected term");
+
+			node = newBinaryOperation(node, newString(name), right);
 		}
 
 		return node;
@@ -249,7 +302,7 @@ public:
 		auto tree = expression();
 
 		if (tree == nullptr)
-			return ParserError{"Invalid Syntax", 0, 0};
+			return ParserError{errorDetails, tokenized[index - 1].line, 0};
 
 		std::cout << OB_STRING_TO_C(OB_TYPE(tree)->tp_toString(tree)) << "\n";
 

@@ -87,7 +87,7 @@ Access the exact value stored
 */
 static Object *BasicInt_represent(BasicInt *self)
 {
-	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10(self->value)) + 1));
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10(abs(self->value))) + 2));
 #pragma warning(suppress : 4996)
 	sprintf(res, "%i", (int) self->value);
 	return newString(res);
@@ -98,10 +98,7 @@ Convert to string
 */
 static Object *BasicInt_toString(BasicInt *self)
 {
-	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10(self->value)) + 1));
-#pragma warning(suppress : 4996)
-	sprintf(res, "%i", (int) self->value);
-	return newString(res);
+	return BasicInt_represent(self);
 }
 
 static TypeObject BasicInt_type = {
@@ -199,7 +196,7 @@ static GetSet BasicFloat_getset[] = {
 
 static Object *BasicFloat_represent(BasicFloat *self)
 {
-	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10((INT) self->value)) + DECIMAL_POINTS));
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10((INT) abs(self->value))) + DECIMAL_POINTS + 2));
 #pragma warning(suppress : 4996)
 	sprintf(res, "%.*f", 10, self->value);
 	return newString(res);
@@ -207,10 +204,7 @@ static Object *BasicFloat_represent(BasicFloat *self)
 
 static Object *BasicFloat_toString(BasicFloat *self)
 {
-	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10((INT) self->value)) + DECIMAL_POINTS));
-#pragma warning(suppress : 4996)
-	sprintf(res, "%.*f", DECIMAL_POINTS, self->value);
-	return newString(res);
+	return BasicFloat_represent(self);
 }
 
 static TypeObject BasicFloat_type = {

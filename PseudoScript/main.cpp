@@ -67,7 +67,7 @@ int main()
 
 		if (res2.details != "PASSED")
 		{
-			std::cout << "Error: " << res2.details << " at line " << res2.line << "\n";
+			std::cout << res2.details << " at line " << res2.line << "\n";
 			continue;
 		}
 
