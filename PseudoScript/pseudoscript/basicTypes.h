@@ -327,7 +327,7 @@ static TypeObject BasicString_type = {
 	BasicString_alloc,                   // Allocate memory for an object of this type
 	BasicString_free,                    // Free an object of a given type
 	BasicString_getset,                  // Getters and setters
-	(CFunction) BasicString_represent,   // Return an exact copy of a value
+	(CFunction) BasicString_toString,    // Return an exact copy of a value
 	(CFunction) BasicString_represent,   // Return the value stored in a string form
 	(CFunction) BasicString_toString     // Return a string representation of the value
 	// Return an integer representation of the value
@@ -445,8 +445,16 @@ static Object *BasicList_represent(BasicList *self)
 
 	for (UINT i = 0; i < self->len; i++)
 	{
-	#pragma warning(suppress : 4996)
-		strcat(chars, OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i])));
+		if (self->data[i] == (Object *) self)
+		{
+		#pragma warning(suppress : 4996)
+			strcat(chars, "...");
+		}
+		else
+		{
+		#pragma warning(suppress : 4996)
+			strcat(chars, OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i])));
+		}
 
 		if (i + 1 < self->len)
 		{
@@ -466,6 +474,29 @@ static Object *BasicList_toString(BasicList *self)
 	return BasicList_represent(self);
 }
 
+static Object *BasicList_getItem(BasicList *self, Object *args)
+{
+	if (OB_TYPE(args)->tp_name != "int")
+	{
+		std::cout << "Indexing requires an integer value\n";
+		exit(1);
+	}
+
+	auto index = OB_INT_TO_C(args);
+	if (index < 0 || index >= self->len)
+	{
+		std::cout << "Index out of range for list getItem\n";
+		exit(1);
+	}
+
+	return OB_TYPE(self->data[index])->tp_copy(self->data[index]);
+}
+
+static MethodDef BasicList_methods[] = {
+	{"getItem", (pseudoFunc) BasicList_getItem},
+	{nullptr}
+};
+
 static TypeObject BasicList_type = {
 	"list",                          // Name of type
 	sizeof(BasicList),               // Size of the object in bytes
@@ -477,21 +508,21 @@ static TypeObject BasicList_type = {
 	BasicList_getset,                // Getters and setters
 	(CFunction) BasicList_copy,      // Return the EXACT value stored -- i.e. \"Hello, World!\"
 	(CFunction) BasicList_represent, // Return the value stored in a string form
-	(CFunction) BasicList_toString   // Return a string representation of the value
-	// Return an integer representation of the value
-	// Return a floating point representation of the value
-	// Return the result of addition
-	// Return the result of subtraction
-	// Return the result of multiplication
-	// Return the result of division
-	// Return the result of raising to the power of a value
-	// Return the result of reverse addition -- see notes ^^^
-	// Return the result of reverse subtraction -- see notes ^^^
-	// Return the result of reverse multiplication -- see notes ^^^
-	// Return the result of reverse division -- see notes ^^^
-	// Return the result of the reverse power -- see notes ^^^
-	// Member definitions for the type
-	// Method definitions for the type
+	(CFunction) BasicList_toString,   // Return a string representation of the value
+	nullptr,                         // Return an integer representation of the value
+	nullptr,                         // Return a floating point representation of the value
+	nullptr,                         // Return the result of addition
+	nullptr,                         // Return the result of subtraction
+	nullptr,                         // Return the result of multiplication
+	nullptr,                         // Return the result of division
+	nullptr,                         // Return the result of raising to the power of a value
+	nullptr,                         // Return the result of reverse addition -- see notes ^^^
+	nullptr,                         // Return the result of reverse subtraction -- see notes ^^^
+	nullptr,                         // Return the result of reverse multiplication -- see notes ^^^
+	nullptr,                         // Return the result of reverse division -- see notes ^^^
+	nullptr,                         // Return the result of the reverse power -- see notes ^^^
+	nullptr,                         // Member definitions for the type
+	BasicList_methods                // Method definitions for the type
 };
 
 Object *newList_fromData(Object **newData, UINT len)
@@ -519,7 +550,7 @@ Object *newList(UINT nargs, ...)
 		res->data[i] = value;
 	}
 	va_end(elems);
-	
+
 	return (Object *) res;
 }
 

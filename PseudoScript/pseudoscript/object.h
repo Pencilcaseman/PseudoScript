@@ -76,7 +76,7 @@ pointer to the C implementation
 typedef struct
 {
 	const char *mt_name;
-	Object *(*mt_meth)(Object *);
+	Object *(*mt_meth)(Object *, Object *);
 } MethodDef;
 
 /*

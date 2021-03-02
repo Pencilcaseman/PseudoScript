@@ -28,7 +28,10 @@ int main()
 
 	auto testList = newList(4, newInt(123), newFloat(3.14159), newString("Hello, World"), newList(3, newInt(123), newFloat(3.14159), newString("Hello, World")));
 	std::cout << "Info: " << OB_STRING_TO_C(OB_TYPE(testList)->tp_represent(testList)) << "\n";
-	std::cout << "Info: " << OB_STRING_TO_C(OB_TYPE(testList)->tp_toString(testList)) << "\n";
+	
+	auto gotten = OB_TYPE(testList)->tp_methods[0].mt_meth(testList, newInt(3));
+	std::cout << "Get val test: " << OB_STRING_TO_C(OB_TYPE(gotten)->tp_represent(gotten)) << "\n";
+	OB_TYPE(c)->tp_dealloc(gotten);
 
 	OB_TYPE(a)->tp_dealloc(a);
 	OB_TYPE(b)->tp_dealloc(b);
