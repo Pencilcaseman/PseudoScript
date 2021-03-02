@@ -1,12 +1,18 @@
 #pragma once
 
 #include <cstdio>
+#include <cstdarg>
 #include "object.h"
+
+// TODO: Move this to a config file
+constexpr UINT DECIMAL_POINTS = 10;
 
 // Important function forward-declares
 Object *newInt(INT value);
 Object *newFloat(FLOAT value);
 Object *newString(STRING value);
+Object *newList_fromData(Object **data, UINT len);
+Object *newList(UINT nargs, ...);
 
 // ====================================================================================
 
@@ -34,7 +40,7 @@ static void BasicInt_free(void *self)
 }
 
 // Deallocate an integral type
-static void BasicInt_dealloc(Object *self)
+static void BasicInt_dealloc(BasicInt *self)
 {
 	OB_TYPE(self)->tp_free(self);
 }
@@ -69,11 +75,22 @@ static GetSet BasicInt_getset[] = {
 };
 
 /*
-Access the exact value stored
+Return a copy of the value stored
 */
-static Object *BasicInt_value(BasicInt *self)
+static Object *BasicInt_copy(BasicInt *self)
 {
 	return newInt(self->value);
+}
+
+/*
+Access the exact value stored
+*/
+static Object *BasicInt_represent(BasicInt *self)
+{
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10(self->value)) + 1));
+#pragma warning(suppress : 4996)
+	sprintf(res, "%i", (int) self->value);
+	return newString(res);
 }
 
 /*
@@ -88,16 +105,17 @@ static Object *BasicInt_toString(BasicInt *self)
 }
 
 static TypeObject BasicInt_type = {
-	"int",                         // Name of type
-	sizeof(BasicInt),              // Size of the object in bytes
-	BasicInt_new,                  // Allocate a new object and return a pointer to it
-	(initFunc) BasicInt_init,      // Initialize an object
-	BasicInt_dealloc,              // Free an object that has been created
-	BasicInt_alloc,                // Allocate memory for an object of this type
-	BasicInt_free,                 // Free an object of a given type
-	BasicInt_getset,               // Getters and setters
-	(CFunction) BasicInt_value,    // Return the EXACT value stored -- i.e. \"Hello, World!\"
-	(CFunction) BasicInt_toString  // Return a string representation of the value
+	"int",                           // Name of type
+	sizeof(BasicInt),                // Size of the object in bytes
+	BasicInt_new,                    // Allocate a new object and return a pointer to it
+	(constructor) BasicInt_init,        // Initialize an object
+	(destructor) BasicInt_dealloc,                // Free an object that has been created
+	BasicInt_alloc,                  // Allocate memory for an object of this type
+	BasicInt_free,                   // Free an object of a given type
+	BasicInt_getset,                 // Getters and setters
+	(CFunction) BasicInt_copy,       // Return an exact copy of a value
+	(CFunction) BasicInt_represent,  // Return the value stored in a string form
+	(CFunction) BasicInt_toString    // Return a string representation of the value
 	// Return an integer representation of the value
 	// Return a floating point representation of the value
 	// Return the result of addition
@@ -150,14 +168,14 @@ static void BasicFloat_free(void *self)
 	OB_FREE(self);
 }
 
-static void BasicFloat_dealloc(Object *self)
+static void BasicFloat_dealloc(BasicFloat *self)
 {
 	OB_TYPE(self)->tp_free(self);
 }
 
 static Object *BasicFloat_new(TypeObject *type, Object *args)
 {
-	BasicFloat *self = (BasicFloat *) type->tp_alloc(type, 0);
+	auto self = (BasicFloat *) type->tp_alloc(type, 0);
 
 	if (self != nullptr)
 		self->value = 0;
@@ -167,34 +185,46 @@ static Object *BasicFloat_new(TypeObject *type, Object *args)
 
 static int BasicFloat_init(BasicFloat *self, Object *args)
 {
-	self->value = 3.1415;
-
 	return 0;
 }
 
-Object *newFloat(FLOAT value);
-
-static Object *BasicFloat_get_value(BasicFloat *self)
+static Object *BasicFloat_copy(BasicFloat *self)
 {
 	return newFloat(self->value);
 }
 
 static GetSet BasicFloat_getset[] = {
-	{"value", (getter) BasicFloat_get_value, nullptr},
 	{nullptr}
 };
 
+static Object *BasicFloat_represent(BasicFloat *self)
+{
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10((INT) self->value)) + DECIMAL_POINTS));
+#pragma warning(suppress : 4996)
+	sprintf(res, "%.*f", 10, self->value);
+	return newString(res);
+}
+
+static Object *BasicFloat_toString(BasicFloat *self)
+{
+	auto res = (char *) OB_MALLOC(sizeof(char) * ((UINT) ceil(log10((INT) self->value)) + DECIMAL_POINTS));
+#pragma warning(suppress : 4996)
+	sprintf(res, "%.*f", DECIMAL_POINTS, self->value);
+	return newString(res);
+}
+
 static TypeObject BasicFloat_type = {
-	"float",                    // Name of type
-	sizeof(BasicFloat),         // Size of the object in bytes
-	BasicFloat_new,             // Allocate a new object and return a pointer to it
-	(initFunc) BasicFloat_init, // Initialize an object
-	BasicFloat_dealloc,         // Free an object that has been created
-	BasicFloat_alloc,           // Allocate memory for an object of this type
-	BasicFloat_free,            // Free an object of a given type
-	BasicFloat_getset,          // Getters and setters
-	nullptr,                    // Return the EXACT value stored -- i.e. \"Hello, World!\"
-	nullptr                     // Return a string representation of the value
+	"float",                           // Name of type
+	sizeof(BasicFloat),                // Size of the object in bytes
+	BasicFloat_new,                    // Allocate a new object and return a pointer to it
+	(constructor) BasicFloat_init,     // Initialize an object
+	(destructor) BasicFloat_dealloc,   // Free an object that has been created
+	BasicFloat_alloc,                  // Allocate memory for an object of this type
+	BasicFloat_free,                   // Free an object of a given type
+	BasicFloat_getset,                 // Getters and setters
+	(CFunction) BasicFloat_copy,       // Return an exact copy of a value							
+	(CFunction) BasicFloat_represent,  // Return the value stored in a string form
+	(CFunction) BasicFloat_toString,   // Return a string representation of the value
 	// Return an integer representation of the value
 	// Return a floating point representation of the value
 	// Return the result of addition
@@ -247,7 +277,7 @@ static void BasicString_free(void *self)
 	OB_FREE(self);
 }
 
-static void BasicString_dealloc(Object *self)
+static void BasicString_dealloc(BasicString *self)
 {
 	OB_TYPE(self)->tp_free(self);
 }
@@ -271,7 +301,7 @@ static GetSet BasicString_getset[] = {
 	{nullptr}
 };
 
-static Object *BasicString_value(BasicString *self)
+static Object *BasicString_represent(BasicString *self)
 {
 	auto resStr = (char *) OB_MALLOC(sizeof(char) * (strlen(self->value) + 2));
 #pragma warning(suppress : 4996)
@@ -289,16 +319,17 @@ static Object *BasicString_toString(BasicString *self)
 }
 
 static TypeObject BasicString_type = {
-	"string",                      // Name of type
-	sizeof(BasicString),              // Size of the object in bytes
-	BasicString_new,                  // Allocate a new object and return a pointer to it
-	(initFunc) BasicString_init,      // Initialize an object
-	BasicString_dealloc,              // Free an object that has been created
-	BasicString_alloc,                // Allocate memory for an object of this type
-	BasicString_free,                 // Free an object of a given type
-	BasicString_getset,               // Getters and setters
-	(CFunction) BasicString_value,    // Return the EXACT value stored -- i.e. \"Hello, World!\"
-	(CFunction) BasicString_toString  // Return a string representation of the value
+	"string",                            // Name of type
+	sizeof(BasicString),                 // Size of the object in bytes
+	BasicString_new,                     // Allocate a new object and return a pointer to it
+	(constructor) BasicString_init,      // Initialize an object
+	(destructor) BasicString_dealloc,    // Free an object that has been created
+	BasicString_alloc,                   // Allocate memory for an object of this type
+	BasicString_free,                    // Free an object of a given type
+	BasicString_getset,                  // Getters and setters
+	(CFunction) BasicString_represent,   // Return an exact copy of a value
+	(CFunction) BasicString_represent,   // Return the value stored in a string form
+	(CFunction) BasicString_toString     // Return a string representation of the value
 	// Return an integer representation of the value
 	// Return a floating point representation of the value
 	// Return the result of addition
@@ -331,4 +362,174 @@ STRING OB_STRING_TO_C(Object *x)
 }
 #else
 #define OB_STRING_TO_C(x) ((*((BasicString *) x)).value)
+#endif
+
+// ==============================================================================
+
+typedef struct
+{
+	OB_BASE;
+	Object **data;
+	UINT len;
+} BasicList;
+
+static Object *BasicList_alloc(TypeObject *self, UINT nItems)
+{
+	return (Object *) OB_MALLOC(self->tp_size * (nItems == 0 ? 1 : nItems));
+}
+
+static void BasicList_free(void *self)
+{
+	OB_FREE(self);
+}
+
+static void BasicList_dealloc(BasicList *self)
+{
+	for (UINT i = 0; i < self->len; i++)
+	{
+		OB_TYPE(self->data[i])->tp_dealloc(self->data[i]);
+	}
+
+	OB_TYPE(self)->tp_free(self);
+}
+
+static Object *BasicList_new(TypeObject *type, Object *args)
+{
+	auto self = (BasicList *) type->tp_alloc(type, 0);
+
+	if (self != nullptr)
+	{
+		self->data = nullptr;
+		self->len = 0;
+	}
+
+	return (Object *) self;
+}
+
+static int BasicList_init(BasicList *self, Object *args)
+{
+	return 0;
+}
+
+static GetSet BasicList_getset[] = {
+	{nullptr}
+};
+
+static Object *BasicList_copy(BasicList *self)
+{
+	auto resData = (Object **) OB_MALLOC(sizeof(Object *) * self->len);
+
+	for (UINT i = 0; i < self->len; i++)
+	{
+		resData[i] = OB_TYPE(self->data[i])->tp_copy(self->data[i]);
+	}
+
+	return newList_fromData(resData, self->len);
+}
+
+static Object *BasicList_represent(BasicList *self)
+{
+	UINT minLen = 0;
+
+	for (UINT i = 0; i < self->len; i++)
+	{
+		minLen += strlen(OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i])));
+	}
+
+	UINT charLen = minLen + (2 * (self->len - 1)) + 2;
+
+	auto chars = (char *) OB_MALLOC(sizeof(char) * charLen);
+
+#pragma warning(suppress : 4996)
+	strcat(chars, "[");
+
+	for (UINT i = 0; i < self->len; i++)
+	{
+	#pragma warning(suppress : 4996)
+		strcat(chars, OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i])));
+
+		if (i + 1 < self->len)
+		{
+		#pragma warning(suppress : 4996)
+			strcat(chars, ", ");
+		}
+	}
+
+#pragma warning(suppress : 4996)
+	strcat(chars, "]");
+
+	return newString(chars);
+}
+
+static Object *BasicList_toString(BasicList *self)
+{
+	return BasicList_represent(self);
+}
+
+static TypeObject BasicList_type = {
+	"list",                          // Name of type
+	sizeof(BasicList),               // Size of the object in bytes
+	BasicList_new,                   // Allocate a new object and return a pointer to it
+	(constructor) BasicList_init,    // Initialize an object
+	(destructor) BasicList_dealloc,  // Free an object that has been created
+	BasicList_alloc,                 // Allocate memory for an object of this type
+	BasicList_free,                  // Free an object of a given type
+	BasicList_getset,                // Getters and setters
+	(CFunction) BasicList_copy,      // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	(CFunction) BasicList_represent, // Return the value stored in a string form
+	(CFunction) BasicList_toString   // Return a string representation of the value
+	// Return an integer representation of the value
+	// Return a floating point representation of the value
+	// Return the result of addition
+	// Return the result of subtraction
+	// Return the result of multiplication
+	// Return the result of division
+	// Return the result of raising to the power of a value
+	// Return the result of reverse addition -- see notes ^^^
+	// Return the result of reverse subtraction -- see notes ^^^
+	// Return the result of reverse multiplication -- see notes ^^^
+	// Return the result of reverse division -- see notes ^^^
+	// Return the result of the reverse power -- see notes ^^^
+	// Member definitions for the type
+	// Method definitions for the type
+};
+
+Object *newList_fromData(Object **newData, UINT len)
+{
+	auto res = newObject(BasicList, &BasicList_type);
+
+	res->data = newData;
+	res->len = len;
+
+	return (Object *) res;
+}
+
+Object *newList(UINT nargs, ...)
+{
+	auto res = newObject(BasicList, &BasicList_type);
+
+	res->data = (Object **) OB_MALLOC(sizeof(Object *) * nargs);
+	res->len = nargs;
+
+	va_list elems;
+	va_start(elems, nargs);
+	for (UINT i = 0; i < nargs; i++)
+	{
+		auto value = va_arg(elems, Object *);
+		res->data[i] = value;
+	}
+	va_end(elems);
+	
+	return (Object *) res;
+}
+
+#ifdef PS_DEBUG
+Object *OB_LIST_TO_C(Object *x, UINT index)
+{
+	if (OB_TYPE(x)->tp_name != "list")
+		throw std::logic_error("Invalid variable type to cast to C STRING");
+	return ((BasicList *) x)->data[index];
+}
+#else
+#define OB_LIST_TO_C(x, index) ((BasicList *) x)->data[index]
 #endif

@@ -44,9 +44,14 @@ public:
 		std::vector<Token> generated;
 		auto tokens = getTokens();
 
-		// while (index < program[line].length())
 		while (line < program.size())
 		{
+			if (program[line].empty())
+			{
+				line++;
+				continue;
+			}
+
 			bool foundToken = false;
 
 			if (program[line][index] == ')')
@@ -105,6 +110,7 @@ public:
 				generated.emplace_back(Token{"ALPHANUM", std::string(program[line].begin() + index, program[line].begin() + index + alphaLen), line});
 				foundToken = true;
 				advance(alphaLen);
+				break;
 			}
 
 			if (!foundToken)
@@ -134,6 +140,8 @@ public:
 				tokenized.emplace_back(generated[i]);
 			}
 		}
+
+		tokenized.emplace_back(Token{"EOF", "EOF", line});
 
 		return {"PASSED", (UINT) -1, (UINT) -1};
 	}

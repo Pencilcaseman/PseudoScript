@@ -170,6 +170,9 @@
     <ClInclude Include="pseudoscript\parser.h" />
     <ClInclude Include="pseudoscript\pseudoscript.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="pseudoscript\grammar\grammar.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

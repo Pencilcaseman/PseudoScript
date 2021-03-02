@@ -7,118 +7,47 @@ using ParserError = struct
 	UINT pos;
 };
 
-enum class NodeType
-{
-	ORIGIN,
-	ASSIGNMENT,
-	VARIABLE
-};
-
-class AST
-{
-public:
-	NodeType type;
-	std::vector<std::shared_ptr<AST>> children;
-
-	AST() = default;
-
-	virtual inline std::string getName() const
-	{
-		throw std::runtime_error("AST type does not implement 'getName()'");
-	}
-
-	virtual inline std::string getVarType() const
-	{
-		throw std::runtime_error("AST type does not implement 'getName()'");
-	}
-};
-
-class Variable : public AST
-{
-public:
-	std::string name;
-	std::string varType;
-	NodeType type = NodeType::VARIABLE;
-
-	Variable(const std::string &n) : name(n)
-	{}
-
-	Variable(const std::string &n) : name(n)
-	{}
-
-	std::string getName() const override
-	{
-		return name;
-	}
-
-	std::string getVarType() const override
-	{
-		return varType;
-	}
-};
-
-class Assignment : public AST
-{
-public:
-	std::shared_ptr<AST> var;
-	std::shared_ptr<AST> expr;
-	NodeType type = NodeType::ASSIGNMENT;
-
-	Assignment(std::shared_ptr<AST> left, std::shared_ptr<AST> right) : var(left), expr(right)
-	{}
-};
-
 class Parser
 {
 public:
 	std::vector<Token> tokenized;
-	AST tree;
+	UINT index;
+	Token currentToken;
 
-	Parser(const std::vector<Token> &lexerOutput) : tokenized(lexerOutput)
+	Parser(const std::vector<Token> &lexerOutput) : tokenized(lexerOutput), index(0)
 	{}
+
+	inline void advance()
+	{
+		index++;
+	}
+
+	inline Token nextToken()
+	{
+		return tokenized[index++];
+	}
 
 	inline ParserError generateAST()
 	{
-		for (UINT index = 0; index < tokenized.size(); index++)
-		{
-			UINT EOL = -1;
+		currentToken = nextToken();
 
-			for (UINT i = index; i < tokenized.size(); i++)
-			{
-				if (tokenized[i].name == "SEMICOLON")
-				{
-					EOL = i;
-					break;
-				}
-			}
+		if (currentToken.name != "INT")
+			return ParserError{"Expected an integer", currentToken.line, 0};
+		auto left = newInt(std::stoll(currentToken.value));
 
-			if (tokenized[index].name == "EQ") // Check for an assignment operation
-			{
-				if (index > 0)
-				{
-					if (tokenized[index - 1].name == "ALPHANUM")
-					{
-						std::cout << "Found an assignment: Value: " << tokenized[index - 1].value << " | Value: " << tokenized[index + 1].value << "\n";
-						
-						Variable var(tokenized[index - 1].value);
-						auto varPtr =  std::make_shared<Variable>(var);
-						Assignment assignmentOp(varPtr, varPtr);
+		auto op = nextToken();
 
-						tree.children.emplace_back(assignmentOp);
-					}
-					else
-					{
-						return ParserError{"Invalid Type. Assignment operator requires a variable type", tokenized[index].line, 0};
-					}
-				}
-				else
-				{
-					return ParserError{"Invalid syntax. Cannot place token \"=\" here", tokenized[index].line, 0};
-				}
-			}
+		if (op.name != "ADD" && op.name != "SUB")
+			return ParserError{"Expected operator + or -", currentToken.line, 0};
 
-			std::cout << "EOL at " << EOL << "\n";
-		}
+		if (currentToken.name != "INT")
+			return ParserError{"Expected an integer", currentToken.line, 0};
+		auto right = newInt(std::stoll(currentToken.value));
+
+		if (op.name == "ADD")
+			std::cout << "Result: " << OB_INT_TO_C(left) + OB_INT_TO_C(right) << "\n";
+		else
+			std::cout << "Result: " << OB_INT_TO_C(left) - OB_INT_TO_C(right) << "\n";
 
 		return ParserError{"PASSED", 0, 0};
 	}

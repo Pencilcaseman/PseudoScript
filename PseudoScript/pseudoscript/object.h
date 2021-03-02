@@ -38,9 +38,10 @@ typedef struct Object
 
 typedef Object *(*getter)(Object *);
 typedef int (*setter)(Object *, Object *);
-typedef int(*initFunc)(Object *self, Object *args);
+typedef int(*constructor)(Object *self, Object *args);
+typedef void(*destructor)(Object *);
 typedef Object *(*CFunction)(Object *);
-typedef Object *(*PseudoFunc)(Object *self, Object *args);
+typedef Object *(*pseudoFunc)(Object *self, Object *args);
 
 /*
 A type to store member/method getters and setters
@@ -92,7 +93,8 @@ typedef struct TypeObject
 	Object *(*tp_alloc)(TypeObject *self, UINT nItems);    // Allocate memory for an object of this type
 	void (*tp_free)(void *obj);                            // Free an object of a given type
 	GetSet *tp_getset;                                     // Getters and setters
-	Object *(*tp_value)(Object *self);                     // Return the EXACT value stored -- i.e. \"Hello, World!\"
+	Object *(*tp_copy) (Object *self);                     // Return an exact copy of a value
+	Object *(*tp_represent)(Object *self);                 // Return the value stored in a string form
 	Object *(*tp_toString)(Object *self);                  // Return a string representation of the value
 	Object *(*tp_toInt)(Object *self);					   // Return an integer representation of the value
 	Object *(*tp_toFloat)(Object *self);                   // Return a floating point representation of the value
