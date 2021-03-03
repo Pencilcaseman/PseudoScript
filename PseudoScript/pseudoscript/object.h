@@ -12,7 +12,9 @@ required function, or a "NotImplemented" error is thrown
 
 */
 
-#include "allocator.h"
+#include <cstdlib>
+#define OB_MALLOC(size) malloc(size)
+#define OB_FREE(data) free(data)
 
 // Typedefs
 typedef long long INT;

@@ -1,7 +1,3 @@
-#define PROGRAM_MEM_SIZE 65536   // Memory buffer size for the program. Bigger = more ram
-#define CUSTOM_ALLOCATOR         // Disable this to use normal C++ allocations
-
-// DEBUG, NDEBUG, _DEBUG
 #if defined(DEBUG) || !defined(NDEBUG) || defined (_DEBUG)
 #define PS_DEBUG
 #else
@@ -13,8 +9,6 @@
 
 int main()
 {
-	objectAllocator = newAllocator(PROGRAM_MEM_SIZE);
-
 	std::cout << "PseudoScript Testing\n";
 
 	auto a = newInt(123);
@@ -26,17 +20,19 @@ int main()
 	std::cout << "Value: " << OB_STRING_TO_C(c) << "\n";
 	std::cout << "Value: " << OB_STRING_TO_C(OB_TYPE(c)->tp_copy(c)) << "\n";
 
-	auto testList = newList(4, newInt(123), newFloat(3.14159), newString("Hello, World"), newList(3, newInt(123), newFloat(3.14159), newString("Hello, World")));
+	auto testList = newList(3, newInt(123), newFloat(3.14159), newString("Hello, World"));
 	std::cout << "Info: " << OB_STRING_TO_C(OB_TYPE(testList)->tp_represent(testList)) << "\n";
-	
-	auto gotten = OB_TYPE(testList)->tp_methods[0].mt_meth(testList, newInt(3));
+
+	auto index = newInt(0);
+	auto gotten = OB_TYPE(testList)->tp_methods[0].mt_meth(testList, index);
 	std::cout << "Get val test: " << OB_STRING_TO_C(OB_TYPE(gotten)->tp_represent(gotten)) << "\n";
-	OB_TYPE(c)->tp_dealloc(gotten);
+	OB_TYPE(gotten)->tp_dealloc(gotten);
+	OB_TYPE(index)->tp_dealloc(index);
 
 	OB_TYPE(a)->tp_dealloc(a);
 	OB_TYPE(b)->tp_dealloc(b);
 	OB_TYPE(c)->tp_dealloc(c);
-	OB_TYPE(c)->tp_dealloc(testList);
+	OB_TYPE(testList)->tp_dealloc(testList);
 
 	std::cout << "\n\n\n";
 
@@ -70,6 +66,19 @@ int main()
 			std::cout << res2.details << " at line " << res2.line << "\n";
 			continue;
 		}
+
+		parser.interpret(true);
+
+		UINT loops = 10000;
+
+		auto start = TIME;
+		for (UINT i = 0; i < loops; i++)
+		{
+			parser.interpret(false);
+		}
+		auto end = TIME;
+		std::cout << "Time: " << end - start << "s\n";
+		std::cout << "Mean: " << ((end - start) / (double) loops) * 1000000000 << "ns\n";
 
 		std::cout << "\n";
 	}

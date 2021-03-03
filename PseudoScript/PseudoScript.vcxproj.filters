@@ -26,9 +26,6 @@
     <ClInclude Include="pseudoscript\object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pseudoscript\allocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="pseudoscript\basicTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>

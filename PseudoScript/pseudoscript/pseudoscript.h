@@ -2,7 +2,8 @@
 
 #include <omp.h>
 
-#include "allocator.h"
+#define TIME omp_get_wtime()
+
 #include "object.h"
 #include "basicTypes.h"
 #include "lexer.h"

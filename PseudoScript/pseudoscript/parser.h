@@ -7,6 +7,12 @@ using ParserError = struct
 	UINT pos;
 };
 
+using InterpreterError = struct
+{
+	std::string details;
+	UINT line;
+};
+
 typedef struct
 {
 	OB_BASE;
@@ -129,6 +135,8 @@ class Parser
 {
 public:
 	std::vector<Token> tokenized;
+	Object *tree;
+
 	UINT index;
 	Token currentToken;
 	std::string errorDetails = "NONE";
@@ -245,8 +253,7 @@ public:
 				}
 			}
 
-			char *name = (char *) OB_MALLOC(sizeof(char) * token.name.length());
-			memcpy(name, token.name.c_str(), sizeof(char) * token.name.length());
+			const char *name = token.name.c_str();
 
 			auto right = term();
 			if (right == nullptr)
@@ -284,8 +291,7 @@ public:
 				}
 			}
 
-			char *name = (char *) OB_MALLOC(sizeof(char) * token.name.length());
-			memcpy(name, token.name.c_str(), sizeof(char) * token.name.length());
+			const char *name = token.name.c_str();
 
 			auto right = term();
 			if (right == nullptr)
@@ -299,7 +305,7 @@ public:
 
 	inline ParserError generateAST()
 	{
-		auto tree = expression();
+		tree = expression();
 
 		if (tree == nullptr)
 			return ParserError{errorDetails, tokenized[index - 1].line, 0};
@@ -307,5 +313,97 @@ public:
 		std::cout << OB_STRING_TO_C(OB_TYPE(tree)->tp_toString(tree)) << "\n";
 
 		return ParserError{"PASSED", 0, 0};
+	}
+
+	static inline Object *solveBinop(BinaryOperation *binop)
+	{
+		Object *left = nullptr, *right = nullptr;
+
+		if (OB_TYPE(binop->left)->tp_name == "int" || OB_TYPE(binop->left)->tp_name == "float")
+		{
+			left = OB_TYPE(binop->left)->tp_copy(binop->left);
+		}
+		else if (OB_TYPE(binop->left)->tp_name == "parser_binop")
+		{
+			left = solveBinop((BinaryOperation *) binop->left);
+		}
+
+		if (OB_TYPE(binop->right)->tp_name == "int" || OB_TYPE(binop->right)->tp_name == "float")
+		{
+			right = OB_TYPE(binop->right)->tp_copy(binop->right);
+		}
+		else if (OB_TYPE(binop->right)->tp_name == "parser_binop")
+		{
+			right = solveBinop((BinaryOperation *) binop->right);
+		}
+
+		Object *res = nullptr;
+
+		auto isFloat = OB_TYPE(left)->tp_name == "float" || OB_TYPE(right)->tp_name == "float";
+		Object *left2 = nullptr, *right2 = nullptr;
+
+		if (OB_TYPE(left)->tp_name == "int")
+			left2 = newFloat((FLOAT) OB_INT_TO_C(left));
+		else if (OB_TYPE(left)->tp_name == "float")
+			left2 = newFloat((FLOAT) OB_FLOAT_TO_C(left));
+
+		if (OB_TYPE(right)->tp_name == "int")
+			right2 = newFloat((FLOAT) OB_INT_TO_C(right));
+		else if (OB_TYPE(right)->tp_name == "float")
+			right2 = newFloat((FLOAT) OB_FLOAT_TO_C(right));
+
+		OB_TYPE(left)->tp_dealloc(left);
+		OB_TYPE(right)->tp_dealloc(right);
+
+		if (!strcmp(OB_STRING_TO_C(binop->operation), "ADD"))
+		{
+			res = newFloat(OB_FLOAT_TO_C(left2) + OB_FLOAT_TO_C(right2));
+		}
+
+		if (!strcmp(OB_STRING_TO_C(binop->operation), "SUB"))
+		{
+			res = newFloat(OB_FLOAT_TO_C(left2) - OB_FLOAT_TO_C(right2));
+		}
+
+		if (!strcmp(OB_STRING_TO_C(binop->operation), "MUL"))
+		{
+			res = newFloat(OB_FLOAT_TO_C(left2) * OB_FLOAT_TO_C(right2));
+		}
+
+		if (!strcmp(OB_STRING_TO_C(binop->operation), "DIV"))
+		{
+			res = newFloat(OB_FLOAT_TO_C(left2) / OB_FLOAT_TO_C(right2));
+		}
+
+		OB_TYPE(left2)->tp_dealloc(left2);
+		OB_TYPE(right2)->tp_dealloc(right2);
+
+		if (res != nullptr)
+		{
+			if (!isFloat)
+			{
+				auto val = OB_FLOAT_TO_C(res);
+				OB_TYPE(res)->tp_dealloc(res);
+				return newInt((INT) val);
+			}
+		}
+
+		return res;
+	}
+
+	inline InterpreterError interpret(bool verbose = true)
+	{
+		if (OB_TYPE(tree)->tp_name == "parser_binop")
+		{
+			auto res = solveBinop((BinaryOperation *) tree);
+
+			if (verbose)
+				std::cout << "Result: " << OB_STRING_TO_C(OB_TYPE(res)->tp_toString(res)) << "\n";
+
+			if (res != nullptr)
+				OB_TYPE(res)->tp_dealloc(res);
+		}
+
+		return InterpreterError{"PASSED", 0};
 	}
 };

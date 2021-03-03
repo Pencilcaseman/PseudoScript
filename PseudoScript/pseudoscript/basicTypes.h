@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <cstdio>
 #include <cstdarg>
 #include "object.h"
@@ -297,13 +298,13 @@ static GetSet BasicString_getset[] = {
 
 static Object *BasicString_represent(BasicString *self)
 {
-	auto resStr = (char *) OB_MALLOC(sizeof(char) * (strlen(self->value) + 2));
-#pragma warning(suppress : 4996)
-	strcat(resStr, "\"");
-#pragma warning(suppress : 4996)
-	strcat(resStr, self->value);
-#pragma warning(suppress : 4996)
-	strcat(resStr, "\"");
+	auto len = strlen(self->value);
+	auto resStr = (char *) OB_MALLOC(sizeof(char) * (len + 3));
+	memcpy(resStr + 0, "\"", sizeof(char) * 1);
+	memcpy(resStr + 1, self->value, sizeof(char) * len);
+	memcpy(resStr + len + 1, "\"", sizeof(char) * 1);
+	resStr[len + 2] = 0;
+
 	return newString(resStr);
 }
 
@@ -343,7 +344,10 @@ static TypeObject BasicString_type = {
 Object *newString(STRING value)
 {
 	auto res = newObject(BasicString, &BasicString_type);
-	res->value = value;
+	auto len = strlen(value);
+	res->value = (char *) OB_MALLOC(sizeof(char) * len);
+	memcpy((char *) res->value, value, sizeof(char) * (len + 1));
+	((char *) res->value)[len] = 0;
 	return (Object *) res;
 }
 
@@ -433,27 +437,34 @@ static Object *BasicList_represent(BasicList *self)
 	UINT charLen = minLen + (2 * (self->len - 1)) + 2;
 
 	auto chars = (char *) OB_MALLOC(sizeof(char) * charLen);
+	UINT index = 0;
 
-#pragma warning(suppress : 4996)
-	strcat(chars, "[");
+	chars[0] = '[';
+	index++;
 
 	for (UINT i = 0; i < self->len; i++)
 	{
 		if (self->data[i] == (Object *) self)
 		{
-		#pragma warning(suppress : 4996)
-			strcat(chars, "...");
+			chars[index] = '.';
+			chars[index + 1] = '.';
+			chars[index + 2] = '.';
+			index += 3;
 		}
 		else
 		{
 		#pragma warning(suppress : 4996)
-			strcat(chars, OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i])));
+			auto strVal = OB_STRING_TO_C(OB_TYPE(self->data[i])->tp_represent(self->data[i]));
+			memcpy(chars + index, strVal, sizeof(char) * strlen(strVal));
+			index += strlen(strVal);
+			chars[index] = '\0';
 		}
 
 		if (i + 1 < self->len)
 		{
-		#pragma warning(suppress : 4996)
-			strcat(chars, ", ");
+			chars[index] = ',';
+			chars[index + 1] = ' ';
+			index += 2;
 		}
 	}
 
